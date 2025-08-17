@@ -1167,7 +1167,7 @@
 
           const enlaces = doc.querySelectorAll('.grid-item a');
           
-          const newChannels = [];
+          const uniqueChannels = {};
           
           enlaces.forEach(enlace => {
               const nombreElemento = enlace.querySelector('strong');
@@ -1179,13 +1179,15 @@
                   const numero = numeroMatch ? numeroMatch[1] : null;
 
                   if (numero !== null) {
-                      newChannels.push({
+                      uniqueChannels[numero] = {
                           number: numero,
                           name: nombre
-                      });
+                      };
                   }
               }
           });
+
+          const newChannels = Object.values(uniqueChannels);
 
           if (newChannels.length > 0) {
             state.channels = newChannels.map(c => ({
