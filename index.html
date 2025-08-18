@@ -1169,15 +1169,19 @@
         resultsDiv.innerHTML = '';
         
         const sortedGroupKeys = Object.keys(groups).sort((a, b) => {
-            if (a === 'CANALES#') return -1;
-            if (b === 'CANALES#') return 1;
+            const explicitOrder = {
+              'DAZN': 1,
+              'MOVISTAR': 2,
+              'CANALES#': 3,
+              'EUROSPORT': 4
+            };
 
-            const indexA = order.findIndex(name => name.toUpperCase() === a);
-            const indexB = order.findIndex(name => name.toUpperCase() === b);
-            
-            if (indexA !== -1 && indexB !== -1) return indexA - indexB;
-            if (indexA !== -1) return -1;
-            if (indexB !== -1) return 1;
+            const orderA = explicitOrder[a] || 99;
+            const orderB = explicitOrder[b] || 99;
+
+            if (orderA !== 99 || orderB !== 99) {
+              return orderA - orderB;
+            }
             
             return a.localeCompare(b);
         });
