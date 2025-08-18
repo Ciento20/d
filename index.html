@@ -206,10 +206,18 @@
         display: block;
       }
       
-      #videoFrame {
+      #videoFrame, #scheduleFrame {
         width: 100%;
         height: 100%;
         border: none;
+      }
+
+      #scheduleFrame {
+          display: none;
+      }
+
+      #scheduleFrame.active {
+          display: block;
       }
       
       .player-controls {
@@ -678,6 +686,7 @@
         <div class="player-section" id="playerSection">
             <div class="player-container" id="playerContainer">
                 <iframe id="videoFrame" allowfullscreen></iframe>
+                <iframe id="scheduleFrame" allowfullscreen></iframe>
             </div>
             <div class="player-controls" id="playerControls">
                 <span class="channel-info" id="channelInfo"></span>
@@ -760,6 +769,34 @@
                         <span class="settings-slider"></span>
                     </label>
                 </div>
+                
+                <div class="settings-item">
+                    <div class="settings-item__info">
+                        <span class="settings-icon">🔞</span>
+                        <div>
+                            <span class="settings-label">Ocultar +18</span>
+                            <span class="settings-description">Oculta canales para adultos</span>
+                        </div>
+                    </div>
+                    <label class="settings-switch">
+                        <input type="checkbox" id="adultFilterToggle">
+                        <span class="settings-slider"></span>
+                    </label>
+                </div>
+
+                <div class="settings-item">
+                    <div class="settings-item__info">
+                        <span class="settings-icon">🗓️</span>
+                        <div>
+                            <span class="settings-label">Activar Schedule</span>
+                            <span class="settings-description">Muestra el calendario de partidos en lugar del reproductor</span>
+                        </div>
+                    </div>
+                    <label class="settings-switch">
+                        <input type="checkbox" id="scheduleToggle">
+                        <span class="settings-slider"></span>
+                    </label>
+                </div>
             </div>
             
             <div class="modal__actions">
@@ -789,6 +826,8 @@
         clearButtonClickCount: 0,
         lastClearButtonClickTime: 0,
         internationalFilter: localStorage.getItem('internationalFilter') === 'true',
+        adultFilter: localStorage.getItem('adultFilter') === 'true',
+        scheduleActive: localStorage.getItem('scheduleActive') === 'true',
         darkMode: localStorage.getItem('darkMode') === 'true',
         isOnline: navigator.onLine,
         filteredKeywords: [
@@ -807,6 +846,33 @@
         localStorage.setItem('darkMode', state.darkMode);
         document.body.classList.toggle('dark-mode', state.darkMode);
         document.getElementById('darkModeToggle').checked = state.darkMode;
+      }
+
+      function toggleSchedule() {
+        state.scheduleActive = !state.scheduleActive;
+        localStorage.setItem('scheduleActive', state.scheduleActive);
+        document.getElementById('scheduleToggle').checked = state.scheduleActive;
+        
+        const playerContainer = document.getElementById('playerContainer');
+        const videoFrame = document.getElementById('videoFrame');
+        const scheduleFrame = document.getElementById('scheduleFrame');
+        const playerControls = document.getElementById('playerControls');
+        
+        if (state.scheduleActive) {
+            closePlayer(); 
+            playerContainer.classList.add('player-container--active');
+            videoFrame.style.display = 'none';
+            scheduleFrame.classList.add('active');
+            scheduleFrame.style.display = 'block';
+            scheduleFrame.src = 'https://watchit.my/';
+            playerControls.classList.remove('player-controls--active');
+        } else {
+            playerContainer.classList.remove('player-container--active');
+            scheduleFrame.classList.remove('active');
+            scheduleFrame.style.display = 'none';
+            scheduleFrame.src = '';
+            videoFrame.style.display = 'block';
+        }
       }
 
       function syncChannelHistory() {
@@ -846,6 +912,11 @@
       }
 
       function playChannel(channel) {
+        if (state.scheduleActive) {
+            document.getElementById('scheduleToggle').checked = false;
+            toggleSchedule();
+        }
+        
         state.currentChannel = channel;
         
         if (!state.channelHistory[channel.number] || 
@@ -855,6 +926,9 @@
         
         document.getElementById('playerContainer').classList.add('player-container--active');
         document.getElementById('playerControls').classList.add('player-controls--active');
+        document.getElementById('videoFrame').style.display = 'block';
+        document.getElementById('scheduleFrame').style.display = 'none';
+
         document.getElementById('channelInfo').textContent = channel.name;
         document.getElementById('channelNumberDisplay').textContent = `CH-${channel.number}`;
         document.getElementById('favoriteBtn').classList.toggle('control-btn--active', state.favorites.includes(channel.number));
@@ -887,8 +961,11 @@
         document.getElementById('playerContainer').classList.remove('player-container--active');
         document.getElementById('playerControls').classList.remove('player-controls--active');
         document.getElementById('videoFrame').src = '';
+        document.getElementById('scheduleFrame').src = '';
         document.getElementById('channelInfo').textContent = '';
         document.getElementById('channelNumberDisplay').textContent = '';
+        document.getElementById('videoFrame').style.display = 'block';
+        document.getElementById('scheduleFrame').style.display = 'none';
         state.currentChannel = null;
       }
 
@@ -980,6 +1057,13 @@
         renderResults();
       }
 
+      function toggleAdultFilter() {
+        state.adultFilter = !state.adultFilter;
+        localStorage.setItem('adultFilter', state.adultFilter);
+        document.getElementById('adultFilterToggle').checked = state.adultFilter;
+        renderResults();
+      }
+
       function filterHistoryChannels() {
         return Object.entries(state.channelHistory).map(([number, data]) => {
           const currentChannel = state.channels.find(c => c.number === number);
@@ -1015,6 +1099,9 @@
             const channelName = channel.name;
             if (state.filteredKeywords.some(keyword => new RegExp(`(^|\\s|\\W)${keyword}(\\s|\\W|$)`, 'g').test(channelName))) return false;
           }
+          if (state.adultFilter && channel.name.toLowerCase().includes('18+')) {
+            return false;
+          }
           return true;
         });
 
@@ -1048,10 +1135,20 @@
         }
         
         const groups = {};
-        const order = ["DAZN", "ESPN", "TNT", "Sky Sports", "Movistar", "LaLiga"];
+        const order = ["DAZN", "Movistar", "Eurosport", "CBS", "FOX", "HBO", "TSN", "ESPN", "TNT", "Sky Sports", "LaLiga"];
         const regex = new RegExp(`^(${order.join('|')})`, 'i');
+        
+        const channelsWithHash = filteredChannels.filter(channel => channel.name.includes('#'));
+        const otherChannels = filteredChannels.filter(channel => !channel.name.includes('#'));
 
-        filteredChannels.forEach(channel => {
+        if (channelsWithHash.length > 0) {
+          groups['CANALES#'] = {
+            name: 'Canales #',
+            channels: channelsWithHash
+          };
+        }
+
+        otherChannels.forEach(channel => {
             const mainNameMatch = channel.name.match(regex);
             const groupName = mainNameMatch ? mainNameMatch[1].trim() : "Otros";
             const groupKey = groupName.toUpperCase();
@@ -1068,6 +1165,9 @@
         resultsDiv.innerHTML = '';
         
         const sortedGroupKeys = Object.keys(groups).sort((a, b) => {
+            if (a === 'CANALES#') return -1;
+            if (b === 'CANALES#') return 1;
+
             const indexA = order.findIndex(name => name.toUpperCase() === a);
             const indexB = order.findIndex(name => name.toUpperCase() === b);
             
@@ -1269,8 +1369,12 @@
       document.addEventListener('DOMContentLoaded', () => {
         document.body.classList.toggle('dark-mode', state.darkMode);
         
-        if (state.channels.length > 0 || Object.keys(state.channelHistory).length > 0) {
-          renderResults();
+        if (state.scheduleActive) {
+            document.getElementById('playerContainer').classList.add('player-container--active');
+            document.getElementById('scheduleFrame').classList.add('active');
+            document.getElementById('scheduleFrame').src = 'https://watchit.my/';
+        } else if (state.channels.length > 0 || Object.keys(state.channelHistory).length > 0) {
+            renderResults();
         }
         
         document.getElementById('filterAll').addEventListener('click', () => applyFilter('all'));
@@ -1293,6 +1397,10 @@
         document.getElementById('darkModeToggle').checked = state.darkMode;
         document.getElementById('internationalFilterToggle').addEventListener('change', toggleInternationalFilter);
         document.getElementById('internationalFilterToggle').checked = state.internationalFilter;
+        document.getElementById('adultFilterToggle').addEventListener('change', toggleAdultFilter);
+        document.getElementById('adultFilterToggle').checked = state.adultFilter;
+        document.getElementById('scheduleToggle').addEventListener('change', toggleSchedule);
+        document.getElementById('scheduleToggle').checked = state.scheduleActive;
         
         if (state.stickyPlayer) {
           document.getElementById('playerSection').classList.add('player-section--sticky');
