@@ -864,14 +864,16 @@
             videoFrame.style.display = 'none';
             scheduleFrame.classList.add('active');
             scheduleFrame.style.display = 'block';
-            scheduleFrame.src = 'https://watchit.my/';
+            scheduleFrame.src = 'https://watchit.my/iframe.php?u=L3NjaGVkdWxlLnBocA';
             playerControls.classList.remove('player-controls--active');
+            scheduleFrame.setAttribute('loading', 'lazy');
         } else {
             playerContainer.classList.remove('player-container--active');
             scheduleFrame.classList.remove('active');
             scheduleFrame.style.display = 'none';
             scheduleFrame.src = '';
             videoFrame.style.display = 'block';
+            scheduleFrame.removeAttribute('loading');
         }
       }
 
@@ -1372,7 +1374,8 @@
         if (state.scheduleActive) {
             document.getElementById('playerContainer').classList.add('player-container--active');
             document.getElementById('scheduleFrame').classList.add('active');
-            document.getElementById('scheduleFrame').src = 'https://watchit.my/';
+            document.getElementById('scheduleFrame').src = 'https://watchit.my/iframe.php?u=L3NjaGVkdWxlLnBocA';
+            document.getElementById('scheduleFrame').setAttribute('loading', 'lazy');
         } else if (state.channels.length > 0 || Object.keys(state.channelHistory).length > 0) {
             renderResults();
         }
