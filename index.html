@@ -837,7 +837,9 @@
           "SE", "Italy", "Greece", "Brazil", "Portugal", "Czech", "MLB", "Denmark", 
           "MENA", "Romania", "Disney", "NICK JR", "Turkey", "LOITV", "Bosnia", 
           "zwei", "Finland", "Estonia", "Belgium", "Albania", "Slovenia", "Norway", 
-          "Slovenia", "CZ", "Brasil", "Arabic", "Afrique", "Optus", "PSL"
+          "Slovenia", "CZ", "Brasil", "Arabic", "Afrique", "Optus", "PSL",
+          "Abu Dhabi", "Alkass", "Arena Sport", "Astro", "Australia", "Qatar", "PT",
+          "Israe", "Cosmote Sport", "DSTV", "Dubai", "Prima", "Germany", "SSC", "SuperSport"
         ]
       };
 
@@ -1101,7 +1103,7 @@
           }
           if (state.internationalFilter) {
             const channelName = channel.name;
-            if (state.filteredKeywords.some(keyword => new RegExp(`(^|\\s|\\W)${keyword}(\\s|\\W|$)`, 'g').test(channelName))) return false;
+            if (state.filteredKeywords.some(keyword => new RegExp(`(^|\\s|\\W)${keyword}(\\s|\\W|$)`, 'gi').test(channelName))) return false;
           }
           if (state.adultFilter && channel.name.toLowerCase().includes('18+')) {
             return false;
@@ -1139,7 +1141,7 @@
         }
         
         const groups = {};
-        const order = ["DAZN", "Movistar", "Eurosport", "CBS", "FOX", "HBO", "TSN", "ESPN", "TNT", "Sky Sports", "LaLiga"];
+        const order = ["DAZN", "Movistar", "Eurosport", "CBS", "FOX", "HBO", "TSN", "ESPN", "TNT", "Sky Sports", "LaLiga", "ABC", "BBC", "CBC", "FX", "NBC", "Sky", "Sportnet"];
         const regex = new RegExp(`^(${order.join('|')})`, 'i');
         
         const channelsWithHash = filteredChannels.filter(channel => channel.name.includes('#'));
