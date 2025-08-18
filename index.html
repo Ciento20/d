@@ -859,7 +859,7 @@
         const playerControls = document.getElementById('playerControls');
         
         if (state.scheduleActive) {
-            closePlayer(); 
+            closePlayer(true); 
             playerContainer.classList.add('player-container--active');
             videoFrame.style.display = 'none';
             scheduleFrame.classList.add('active');
@@ -959,11 +959,13 @@
         }
       }
 
-      function closePlayer() {
+      function closePlayer(keepScheduleActive = false) {
         document.getElementById('playerContainer').classList.remove('player-container--active');
         document.getElementById('playerControls').classList.remove('player-controls--active');
         document.getElementById('videoFrame').src = '';
-        document.getElementById('scheduleFrame').src = '';
+        if (!keepScheduleActive) {
+            document.getElementById('scheduleFrame').src = '';
+        }
         document.getElementById('channelInfo').textContent = '';
         document.getElementById('channelNumberDisplay').textContent = '';
         document.getElementById('videoFrame').style.display = 'block';
@@ -1372,12 +1374,17 @@
         document.body.classList.toggle('dark-mode', state.darkMode);
         
         if (state.scheduleActive) {
+            document.getElementById('scheduleToggle').checked = true;
             document.getElementById('playerContainer').classList.add('player-container--active');
+            document.getElementById('videoFrame').style.display = 'none';
             document.getElementById('scheduleFrame').classList.add('active');
+            document.getElementById('scheduleFrame').style.display = 'block';
             document.getElementById('scheduleFrame').src = 'https://watchit.my/iframe.php?u=L3NjaGVkdWxlLnBocA';
+            document.getElementById('playerControls').classList.remove('player-controls--active');
             document.getElementById('scheduleFrame').setAttribute('loading', 'lazy');
-        } else if (state.channels.length > 0 || Object.keys(state.channelHistory).length > 0) {
-            renderResults();
+        } else {
+             document.getElementById('scheduleToggle').checked = false;
+             renderResults();
         }
         
         document.getElementById('filterAll').addEventListener('click', () => applyFilter('all'));
@@ -1403,7 +1410,6 @@
         document.getElementById('adultFilterToggle').addEventListener('change', toggleAdultFilter);
         document.getElementById('adultFilterToggle').checked = state.adultFilter;
         document.getElementById('scheduleToggle').addEventListener('change', toggleSchedule);
-        document.getElementById('scheduleToggle').checked = state.scheduleActive;
         
         if (state.stickyPlayer) {
           document.getElementById('playerSection').classList.add('player-section--sticky');
