@@ -1172,19 +1172,22 @@
         
         const sortedGroupKeys = Object.keys(groups).sort((a, b) => {
             const explicitOrder = {
-              'DAZN': 1,
-              'MOVISTAR': 2,
-              'CANALES#': 3,
-              'EUROSPORT': 4
+                'DAZN': 1,
+                'MOVISTAR': 2,
+                'CANALES#': 3,
+                'EUROSPORT': 4
             };
 
-            const orderA = explicitOrder[a] || 99;
-            const orderB = explicitOrder[b] || 99;
-
-            if (orderA !== 99 || orderB !== 99) {
-              return orderA - orderB;
-            }
+            let orderA = explicitOrder[a] || 99;
+            let orderB = explicitOrder[b] || 99;
             
+            if (a.toUpperCase() === 'OTROS') orderA = 100;
+            if (b.toUpperCase() === 'OTROS') orderB = 100;
+
+            if (orderA !== orderB) {
+                return orderA - orderB;
+            }
+
             return a.localeCompare(b);
         });
 
