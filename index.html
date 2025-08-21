@@ -823,8 +823,6 @@
         channelHistory: JSON.parse(localStorage.getItem('channelHistory')) || {},
         currentChannel: null,
         baseDomain: 'thedaddy.top',
-        clearButtonClickCount: 0,
-        lastClearButtonClickTime: 0,
         internationalFilter: localStorage.getItem('internationalFilter') === 'true',
         adultFilter: localStorage.getItem('adultFilter') === 'true',
         scheduleActive: localStorage.getItem('scheduleActive') === 'true',
@@ -1320,18 +1318,32 @@
         }
       }
 
-      function handleClearButtonClick() {
-        const now = Date.now();
-        if (now - state.lastClearButtonClickTime > 1000) state.clearButtonClickCount = 0;
-        state.clearButtonClickCount++;
-        state.lastClearButtonClickTime = now;
-        
-        if (state.clearButtonClickCount >= 3) {
-          document.getElementById('settingsModal').classList.add('modal--active');
-          state.clearButtonClickCount = 0;
-        } else {
-          clearEmojiFilters();
+      function handleClearButtonClick(event) {
+        let pressTimer;
+        const button = event.currentTarget;
+        const settingsModal = document.getElementById('settingsModal');
+
+        function startPress() {
+            pressTimer = setTimeout(() => {
+                settingsModal.classList.add('modal--active');
+                button.removeEventListener('mouseup', cancelPress);
+                button.removeEventListener('touchend', cancelPress);
+            }, 1000);
         }
+
+        function cancelPress() {
+            clearTimeout(pressTimer);
+            if (pressTimer) {
+                clearEmojiFilters();
+            }
+            button.removeEventListener('mouseup', cancelPress);
+            button.removeEventListener('touchend', cancelPress);
+        }
+
+        button.addEventListener('mouseup', cancelPress, { once: true });
+        button.addEventListener('touchend', cancelPress, { once: true });
+        
+        startPress();
       }
 
       function handleOnlineStatusChange() {
@@ -1399,7 +1411,8 @@
         document.getElementById('filterAll').addEventListener('click', () => applyFilter('all'));
         document.getElementById('filterFavorites').addEventListener('click', () => applyFilter('favorites'));
         document.getElementById('filterHistory').addEventListener('click', () => applyFilter('history'));
-        document.getElementById('clearEmojiFilters').addEventListener('click', handleClearButtonClick);
+        document.getElementById('clearEmojiFilters').addEventListener('mousedown', handleClearButtonClick);
+        document.getElementById('clearEmojiFilters').addEventListener('touchstart', handleClearButtonClick);
         document.getElementById('searchInput').addEventListener('input', handleSearchInput);
         document.getElementById('searchInput').addEventListener('keypress', (e) => {
           if (e.key === 'Enter') handleSearchEnter();
