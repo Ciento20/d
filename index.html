@@ -206,18 +206,31 @@
         display: block;
       }
       
-      #videoFrame, #scheduleFrame {
+      #videoFrame {
         width: 100%;
         height: 100%;
         border: none;
       }
-
-      #scheduleFrame {
+      
+      .schedule-container {
+          background: var(--card-bg);
+          border-radius: var(--radius-md);
+          overflow: hidden;
+          width: 100%;
+          height: calc(57vw + 40px);
+          max-height: 85vh;
           display: none;
+          border: 1px solid var(--border-color);
       }
 
-      #scheduleFrame.active {
+      .schedule-container--active {
           display: block;
+      }
+      
+      #scheduleFrame {
+          width: 100%;
+          height: 100%;
+          border: none;
       }
       
       .player-controls {
@@ -686,7 +699,6 @@
         <div class="player-section" id="playerSection">
             <div class="player-container" id="playerContainer">
                 <iframe id="videoFrame" allowfullscreen></iframe>
-                <iframe id="scheduleFrame" allowfullscreen></iframe>
             </div>
             <div class="player-controls" id="playerControls">
                 <span class="channel-info" id="channelInfo"></span>
@@ -711,6 +723,10 @@
             </div>
         </div>
         
+        <div class="schedule-container" id="scheduleContainer">
+            <iframe id="scheduleFrame" allowfullscreen></iframe>
+        </div>
+
         <div id="offlineMessage" class="offline-message" style="display: none;">Modo offline: mostrando canales del historial</div>
         <div id="updateNotification" class="update-notification"></div>
         <div class="channels-grid" id="results"></div>
@@ -854,25 +870,21 @@
         document.getElementById('scheduleToggle').checked = state.scheduleActive;
         
         const playerContainer = document.getElementById('playerContainer');
+        const scheduleContainer = document.getElementById('scheduleContainer');
         const videoFrame = document.getElementById('videoFrame');
         const scheduleFrame = document.getElementById('scheduleFrame');
         const playerControls = document.getElementById('playerControls');
         
         if (state.scheduleActive) {
             closePlayer(true); 
-            playerContainer.classList.add('player-container--active');
-            videoFrame.style.display = 'none';
-            scheduleFrame.classList.add('active');
-            scheduleFrame.style.display = 'block';
-            scheduleFrame.src = 'https://watchit.my/iframe.php?u=L3NjaGVkdWxlLnBocA';
+            playerContainer.classList.remove('player-container--active');
             playerControls.classList.remove('player-controls--active');
+            scheduleContainer.classList.add('schedule-container--active');
+            scheduleFrame.src = 'https://watchit.my/iframe.php?u=L3NjaGVkdWxlLnBocA';
             scheduleFrame.setAttribute('loading', 'lazy');
         } else {
-            playerContainer.classList.remove('player-container--active');
-            scheduleFrame.classList.remove('active');
-            scheduleFrame.style.display = 'none';
+            scheduleContainer.classList.remove('schedule-container--active');
             scheduleFrame.src = '';
-            videoFrame.style.display = 'block';
             scheduleFrame.removeAttribute('loading');
         }
       }
@@ -932,8 +944,6 @@
         
         document.getElementById('playerContainer').classList.add('player-container--active');
         document.getElementById('playerControls').classList.add('player-controls--active');
-        document.getElementById('videoFrame').style.display = 'block';
-        document.getElementById('scheduleFrame').style.display = 'none';
 
         document.getElementById('channelInfo').textContent = channel.name;
         document.getElementById('channelNumberDisplay').textContent = `CH-${channel.number}`;
@@ -968,12 +978,11 @@
         document.getElementById('playerControls').classList.remove('player-controls--active');
         document.getElementById('videoFrame').src = '';
         if (!keepScheduleActive) {
+            document.getElementById('scheduleContainer').classList.remove('schedule-container--active');
             document.getElementById('scheduleFrame').src = '';
         }
         document.getElementById('channelInfo').textContent = '';
         document.getElementById('channelNumberDisplay').textContent = '';
-        document.getElementById('videoFrame').style.display = 'block';
-        document.getElementById('scheduleFrame').style.display = 'none';
         state.currentChannel = null;
       }
 
@@ -1401,12 +1410,8 @@
         
         if (state.scheduleActive) {
             document.getElementById('scheduleToggle').checked = true;
-            document.getElementById('playerContainer').classList.add('player-container--active');
-            document.getElementById('videoFrame').style.display = 'none';
-            document.getElementById('scheduleFrame').classList.add('active');
-            document.getElementById('scheduleFrame').style.display = 'block';
+            document.getElementById('scheduleContainer').classList.add('schedule-container--active');
             document.getElementById('scheduleFrame').src = 'https://watchit.my/iframe.php?u=L3NjaGVkdWxlLnBocA';
-            document.getElementById('playerControls').classList.remove('player-controls--active');
             document.getElementById('scheduleFrame').setAttribute('loading', 'lazy');
         } else {
              document.getElementById('scheduleToggle').checked = false;
