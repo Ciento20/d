@@ -879,33 +879,37 @@
 
       function syncChannelHistory() {
         const currentChannelsMap = {};
-        state.channels.forEach(channel => {
-          currentChannelsMap[channel.number] = {
+        state.channels.forEach((channel, index) => {
+          const key = `${channel.number}-${index}`;
+          currentChannelsMap[key] = {
             name: channel.name,
             event: channel.event || '',
             sport: channel.sport || ''
           };
         });
 
-        Object.keys(currentChannelsMap).forEach(number => {
+        Object.keys(currentChannelsMap).forEach(key => {
+          const number = key.split('-')[0];
+          const currentData = currentChannelsMap[key];
+          
           if (!state.channelHistory[number]) {
             state.channelHistory[number] = {
-              names: [currentChannelsMap[number].name],
-              event: currentChannelsMap[number].event,
-              sport: currentChannelsMap[number].sport,
+              names: [currentData.name],
+              event: currentData.event,
+              sport: currentData.sport,
               lastUpdated: new Date().toISOString()
             };
           } else {
             const historyEntry = state.channelHistory[number];
-            const currentName = currentChannelsMap[number].name;
+            const currentName = currentData.name;
             
             if (historyEntry.names[0] !== currentName) {
               historyEntry.names.unshift(currentName);
               historyEntry.names = historyEntry.names.slice(0, 3);
             }
             
-            if (currentChannelsMap[number].event) historyEntry.event = currentChannelsMap[number].event;
-            if (currentChannelsMap[number].sport) historyEntry.sport = currentChannelsMap[number].sport;
+            if (currentData.event) historyEntry.event = currentData.event;
+            if (currentData.sport) historyEntry.sport = currentData.sport;
             historyEntry.lastUpdated = new Date().toISOString();
           }
         });
@@ -1278,8 +1282,9 @@
 
           const enlaces = doc.querySelectorAll('.grid-item a');
           
-          const uniqueChannels = {};
-          
+          const newChannels = [];
+          const seenChannels = new Set(); 
+
           enlaces.forEach(enlace => {
               const nombreElemento = enlace.querySelector('strong');
               const url = enlace.href;
@@ -1290,15 +1295,17 @@
                   const numero = numeroMatch ? numeroMatch[1] : null;
 
                   if (numero !== null) {
-                      uniqueChannels[numero] = {
-                          number: numero,
-                          name: nombre
-                      };
+                      const channelKey = `${numero}-${nombre}`; 
+                      if (!seenChannels.has(channelKey)) {
+                          seenChannels.add(channelKey);
+                          newChannels.push({
+                              number: numero,
+                              name: nombre
+                          });
+                      }
                   }
               }
           });
-
-          const newChannels = Object.values(uniqueChannels);
 
           if (newChannels.length > 0) {
             state.channels = newChannels.map(c => ({
@@ -1340,10 +1347,8 @@
             button.removeEventListener('touchend', cancelPress);
         }
 
-        button.addEventListener('mouseup', cancelPress, { once: true });
-        button.addEventListener('touchend', cancelPress, { once: true });
-        
-        startPress();
+        button.addEventListener('mousedown', startPress);
+        button.addEventListener('touchstart', startPress);
       }
 
       function handleOnlineStatusChange() {
