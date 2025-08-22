@@ -1414,7 +1414,43 @@
         }
         
         document.getElementById('filterAll').addEventListener('click', () => applyFilter('all'));
-        document.getElementById('filterFavorites').addEventListener('click', () => applyFilter('favorites'));
+        
+        let favoritePressTimer;
+        document.getElementById('filterFavorites').addEventListener('mousedown', (e) => {
+            if (e.button === 0) {
+                favoritePressTimer = setTimeout(() => {
+                    toggleSchedule();
+                    document.getElementById('scheduleToggle').checked = state.scheduleActive;
+                    favoritePressTimer = null;
+                }, 1000);
+            }
+        });
+
+        document.getElementById('filterFavorites').addEventListener('mouseup', (e) => {
+            if (favoritePressTimer) {
+                clearTimeout(favoritePressTimer);
+                if (e.button === 0) {
+                  applyFilter('favorites');
+                }
+            }
+            favoritePressTimer = null;
+        });
+        
+        document.getElementById('filterFavorites').addEventListener('touchstart', () => {
+            favoritePressTimer = setTimeout(() => {
+                toggleSchedule();
+                document.getElementById('scheduleToggle').checked = state.scheduleActive;
+                favoritePressTimer = null;
+            }, 1000);
+        });
+
+        document.getElementById('filterFavorites').addEventListener('touchend', () => {
+            if (favoritePressTimer) {
+                clearTimeout(favoritePressTimer);
+            }
+            favoritePressTimer = null;
+        });
+        
         document.getElementById('filterHistory').addEventListener('click', () => applyFilter('history'));
         document.getElementById('clearEmojiFilters').addEventListener('mousedown', handleClearButtonClick);
         document.getElementById('clearEmojiFilters').addEventListener('touchstart', handleClearButtonClick);
