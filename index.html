@@ -869,16 +869,10 @@
         localStorage.setItem('scheduleActive', state.scheduleActive);
         document.getElementById('scheduleToggle').checked = state.scheduleActive;
         
-        const playerContainer = document.getElementById('playerContainer');
         const scheduleContainer = document.getElementById('scheduleContainer');
-        const videoFrame = document.getElementById('videoFrame');
         const scheduleFrame = document.getElementById('scheduleFrame');
-        const playerControls = document.getElementById('playerControls');
         
         if (state.scheduleActive) {
-            closePlayer(true); 
-            playerContainer.classList.remove('player-container--active');
-            playerControls.classList.remove('player-controls--active');
             scheduleContainer.classList.add('schedule-container--active');
             scheduleFrame.src = 'https://watchit.my/iframe.php?u=L3NjaGVkdWxlLnBocA';
             scheduleFrame.setAttribute('loading', 'lazy');
@@ -930,11 +924,6 @@
       }
 
       function playChannel(channel) {
-        if (state.scheduleActive) {
-            document.getElementById('scheduleToggle').checked = false;
-            toggleSchedule();
-        }
-        
         state.currentChannel = channel;
         
         if (!state.channelHistory[channel.number] || 
