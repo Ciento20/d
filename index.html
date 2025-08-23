@@ -1077,8 +1077,8 @@
             number,
             name: currentChannel?.name || data.names[0] || `Canal ${number}`,
             time: currentChannel?.time || '',
-            event: currentChannel?.event || data.event || '',
-            sport: currentChannel?.sport || data.sport || ''
+            event: data.event || '',
+            sport: data.sport || ''
           };
         });
       }
@@ -1336,7 +1336,7 @@
             }, 1000);
         }
 
-        function cancelPress() {
+        function cancelPress(e) {
             clearTimeout(pressTimer);
             if (pressTimer) {
                 clearEmojiFilters();
@@ -1347,6 +1347,8 @@
 
         button.addEventListener('mousedown', startPress);
         button.addEventListener('touchstart', startPress);
+        button.addEventListener('mouseup', cancelPress);
+        button.addEventListener('touchend', cancelPress);
       }
 
       function handleOnlineStatusChange() {
@@ -1446,8 +1448,7 @@
         });
         
         document.getElementById('filterHistory').addEventListener('click', () => applyFilter('history'));
-        document.getElementById('clearEmojiFilters').addEventListener('mousedown', handleClearButtonClick);
-        document.getElementById('clearEmojiFilters').addEventListener('touchstart', handleClearButtonClick);
+        document.getElementById('clearEmojiFilters').addEventListener('click', handleClearButtonClick);
         document.getElementById('searchInput').addEventListener('input', handleSearchInput);
         document.getElementById('searchInput').addEventListener('keypress', (e) => {
           if (e.key === 'Enter') handleSearchEnter();
