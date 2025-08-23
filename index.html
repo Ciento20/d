@@ -1050,7 +1050,7 @@
         renderResults();
       }
 
-      function clearEmojiFilters() {
+      function clearSearchAndFilters() {
         document.getElementById('searchInput').value = '';
         state.searchTerm = '';
         renderResults();
@@ -1323,34 +1323,6 @@
         }
       }
 
-      function handleClearButtonClick(event) {
-        let pressTimer;
-        const button = event.currentTarget;
-        const settingsModal = document.getElementById('settingsModal');
-
-        function startPress() {
-            pressTimer = setTimeout(() => {
-                settingsModal.classList.add('modal--active');
-                button.removeEventListener('mouseup', cancelPress);
-                button.removeEventListener('touchend', cancelPress);
-            }, 1000);
-        }
-
-        function cancelPress(e) {
-            clearTimeout(pressTimer);
-            if (pressTimer) {
-                clearEmojiFilters();
-            }
-            button.removeEventListener('mouseup', cancelPress);
-            button.removeEventListener('touchend', cancelPress);
-        }
-
-        button.addEventListener('mousedown', startPress);
-        button.addEventListener('touchstart', startPress);
-        button.addEventListener('mouseup', cancelPress);
-        button.addEventListener('touchend', cancelPress);
-      }
-
       function handleOnlineStatusChange() {
         state.isOnline = navigator.onLine;
         state.isOnline ? scrape() : renderResults();
@@ -1446,9 +1418,41 @@
             }
             favoritePressTimer = null;
         });
+
+        const clearButton = document.getElementById('clearEmojiFilters');
+        let pressTimer;
+
+        clearButton.addEventListener('mousedown', (e) => {
+          pressTimer = setTimeout(() => {
+            document.getElementById('settingsModal').classList.add('modal--active');
+            pressTimer = null;
+          }, 1000);
+        });
+
+        clearButton.addEventListener('mouseup', () => {
+          if (pressTimer) {
+            clearTimeout(pressTimer);
+            clearSearchAndFilters();
+            pressTimer = null;
+          }
+        });
+
+        clearButton.addEventListener('touchstart', (e) => {
+          e.preventDefault();
+          pressTimer = setTimeout(() => {
+            document.getElementById('settingsModal').classList.add('modal--active');
+            pressTimer = null;
+          }, 1000);
+        });
+
+        clearButton.addEventListener('touchend', () => {
+          if (pressTimer) {
+            clearTimeout(pressTimer);
+            clearSearchAndFilters();
+            pressTimer = null;
+          }
+        });
         
-        document.getElementById('filterHistory').addEventListener('click', () => applyFilter('history'));
-        document.getElementById('clearEmojiFilters').addEventListener('click', handleClearButtonClick);
         document.getElementById('searchInput').addEventListener('input', handleSearchInput);
         document.getElementById('searchInput').addEventListener('keypress', (e) => {
           if (e.key === 'Enter') handleSearchEnter();
