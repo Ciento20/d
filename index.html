@@ -242,6 +242,11 @@
       height: 100%;
       border: none;
     }
+
+    .zoomed-player {
+      transform: scale(1.5);
+      transform-origin: center center;
+    }
     
     .player-controls {
       display: none;
@@ -1195,8 +1200,16 @@
       document.getElementById('channelNumberDisplay').textContent = `CH-${channel.number}`;
       document.getElementById('favoriteBtn').classList.toggle('control-btn--active', state.favorites.includes(channel.number));
       
+      const videoFrame = document.getElementById('videoFrame');
+      
       if (state.isOnline) {
-        document.getElementById('videoFrame').src = `https://${state.baseDomain}/embed/stream-${channel.number}.php`;
+        videoFrame.src = `https://${state.baseDomain}/embed/stream-${channel.number}.php`;
+      }
+
+      if (state.baseDomain === 'watchit.my') {
+        videoFrame.classList.add('zoomed-player');
+      } else {
+        videoFrame.classList.remove('zoomed-player');
       }
     }
 
