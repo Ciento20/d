@@ -493,6 +493,23 @@
       transform: scale(1.1);
     }
     
+    .domain-select-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 5px;
+    }
+    
+    .domain-select {
+      flex: 1;
+      padding: 0.5rem;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      background-color: var(--card-bg);
+      color: var(--text);
+      font-size: 0.9rem;
+    }
+    
     .channel-group {
       background: var(--card-bg);
       border: 1px solid var(--border-color);
@@ -810,6 +827,23 @@
         
         <div class="settings-item">
           <div class="settings-item__info">
+            <span class="settings-icon">🔗</span>
+            <div>
+              <span class="settings-label">Dominio del reproductor</span>
+              <span class="settings-description">Elige la fuente de los canales</span>
+            </div>
+          </div>
+          <div class="domain-select-container">
+            <select id="baseDomainSelect" class="domain-select">
+              <option value="watchit.my">watchit.my</option>
+              <option value="thedaddy.top">thedaddy.top</option>
+              <option value="daddylivestream.com">daddylivestream.com</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="settings-item">
+          <div class="settings-item__info">
             <span class="settings-icon">🌐</span>
             <div>
               <span class="settings-label">Filtrar internacionales</span>
@@ -875,7 +909,7 @@
       favorites: JSON.parse(localStorage.getItem('favorites')) || [],
       channelHistory: JSON.parse(localStorage.getItem('channelHistory')) || {},
       currentChannel: null,
-      baseDomain: 'watchit.my',
+      baseDomain: localStorage.getItem('baseDomain') || 'watchit.my',
       clearButtonClickCount: 0,
       lastClearButtonClickTime: 0,
       internationalFilter: localStorage.getItem('internationalFilter') === 'true',
@@ -1384,7 +1418,6 @@
         return true;
       });
 
-      // Ordenar canales favoritos primero en su grupo de eventos
       filteredChannels.sort((a, b) => {
         const aIsFavorite = state.favorites.includes(a.number);
         const bIsFavorite = state.favorites.includes(b.number);
@@ -1414,7 +1447,7 @@
     }
 
     function renderResults() {
-      delete state._conflictedEvents; // Reset cache de eventos conflictivos
+      delete state._conflictedEvents;
       const filteredChannels = filterChannels();
       const resultsDiv = document.getElementById('results');
       document.getElementById('offlineMessage').style.display = state.isOnline ? 'none' : 'block';
@@ -1595,7 +1628,7 @@
                 url, 
                 time: time, 
                 event: matchName, 
-                sport: "" // No se extrae la categoría del primer archivo, se deja en blanco
+                sport: ""
               });
             }
           });
@@ -1724,6 +1757,16 @@
       
       const savedColor = localStorage.getItem('primaryColor') || '#2563eb';
       changePrimaryColor(savedColor);
+      
+      const baseDomainSelect = document.getElementById('baseDomainSelect');
+      baseDomainSelect.value = state.baseDomain;
+      baseDomainSelect.addEventListener('change', (e) => {
+        state.baseDomain = e.target.value;
+        localStorage.setItem('baseDomain', state.baseDomain);
+        if (state.currentChannel) {
+          playChannel(state.currentChannel);
+        }
+      });
       
       window.addEventListener('online', handleOnlineStatusChange);
       window.addEventListener('offline', handleOnlineStatusChange);
