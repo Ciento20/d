@@ -245,7 +245,7 @@
 
     .zoomed-player {
       transform: scale(1.35);
-      transform-origin: center center;
+      transform-origin: top center;
     }
     
     .player-controls {
@@ -1194,18 +1194,13 @@
         syncChannelHistory();
       }
       
-      const playerContainer = document.getElementById('playerContainer');
-      const playerControls = document.getElementById('playerControls');
-      const channelInfo = document.getElementById('channelInfo');
-      const channelNumberDisplay = document.getElementById('channelNumberDisplay');
-      const favoriteBtn = document.getElementById('favoriteBtn');
-      const videoFrame = document.getElementById('videoFrame');
+      document.getElementById('playerContainer').classList.add('player-container--active');
+      document.getElementById('playerControls').classList.add('player-controls--active');
+      document.getElementById('channelInfo').textContent = channel.name;
+      document.getElementById('channelNumberDisplay').textContent = `CH-${channel.number}`;
+      document.getElementById('favoriteBtn').classList.toggle('control-btn--active', state.favorites.includes(channel.number));
       
-      playerContainer.classList.add('player-container--active');
-      playerControls.classList.add('player-controls--active');
-      channelInfo.textContent = channel.name;
-      channelNumberDisplay.textContent = `CH-${channel.number}`;
-      favoriteBtn.classList.toggle('control-btn--active', state.favorites.includes(channel.number));
+      const videoFrame = document.getElementById('videoFrame');
       
       if (state.isOnline) {
         videoFrame.src = `https://${state.baseDomain}/embed/stream-${channel.number}.php`;
@@ -1216,11 +1211,6 @@
       } else {
         videoFrame.classList.remove('zoomed-player');
       }
-      
-      window.scrollTo({
-        top: 0,
-        behavior: 'smooth'
-      });
     }
 
     function playChannelByNumber(number) {
