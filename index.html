@@ -536,8 +536,16 @@
     .channel-group__title {
       font-weight: 600;
       color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
-    
+
+    .channel-group__title .emoji-icon {
+      font-size: 1.2rem;
+      vertical-align: middle;
+    }
+
     .channel-group__sport {
       font-size: 0.8rem;
       color: var(--primary);
@@ -677,6 +685,12 @@
       color: var(--text);
       opacity: 0.5;
       margin-top: 5px;
+    }
+    
+    .emoji-icon {
+      display: inline-block;
+      font-size: 1.2rem;
+      vertical-align: middle;
     }
     
     @keyframes spin {
@@ -1226,7 +1240,8 @@
           name: historyEntry?.names?.[0] || `Canal ${channelNumber}`,
           time: '',
           event: historyEntry?.event || '',
-          sport: historyEntry?.sport || ''
+          sport: historyEntry?.sport || '',
+          emoji: ''
         };
         playChannel(channel);
       }
@@ -1362,7 +1377,8 @@
           name: currentChannel?.name || data.names[0] || `Canal ${number}`,
           time: currentChannel?.time || '',
           event: currentChannel?.event || data.event || '',
-          sport: currentChannel?.sport || data.sport || ''
+          sport: currentChannel?.sport || data.sport || '',
+          emoji: currentChannel?.emoji || data.emoji || ''
         };
       });
     }
@@ -1499,15 +1515,20 @@
       
       Object.entries(groups).forEach(([groupKey, groupChannels]) => {
         const [time, event, sport] = groupKey.split('|');
+        const firstChannel = groupChannels[0];
+        const sportEmoji = firstChannel.emoji;
+        const cleanedSport = sport.replace(/\(\d+\)/g, '').trim();
+
         const groupElement = document.createElement('div');
         groupElement.className = 'channel-group';
         groupElement.innerHTML = `
           <div class="channel-group__header">
             <div class="channel-group__title">
+              ${sportEmoji ? `<span class="emoji-icon">${sportEmoji}</span>` : ''}
               ${state.currentFilter !== 'history' ? `<span class="channel-time ${time === 'LIVE' ? 'channel-time--live' : ''}">${time}</span>` : `<span class="channel-time">${time}</span>`}
               ${event}
             </div>
-            <div class="channel-group__sport">${translateSport(sport.replace(/\(\d+\)/g, '').trim())}</div>
+            <div class="channel-group__sport">${translateSport(cleanedSport)}</div>
           </div>
           <div class="channel-group__content ${groupChannels.length === 1 ? 'channel-group__content--single' : ''}">
             ${groupChannels.map(channel => createChannelCard(channel)).join('')}
@@ -1527,7 +1548,10 @@
         <div class="channel-card ${isFavorite ? 'channel-card--favorite' : ''}" onclick="playChannel(${JSON.stringify(channel).replace(/"/g, '&quot;')})">
           <div class="channel-header">
             ${!state.groupChannels || state.currentFilter === 'history' ? `<div class="channel-time">${adjustedTime}</div>` : ''}
-            <div class="channel-name ${isLive && state.currentFilter !== 'history' ? 'channel-name--live' : ''}">${channel.name}</div>
+            <div class="channel-name ${isLive && state.currentFilter !== 'history' ? 'channel-name--live' : ''}">
+              ${channel.emoji ? `<span class="emoji-icon">${channel.emoji}</span>` : ''}
+              ${channel.name}
+            </div>
             <div class="channel-number">${channel.number}</div>
           </div>
           ${!state.groupChannels || state.currentFilter === 'history' ? `<div class="channel-event">${channel.event}</div>` : ''}
@@ -1612,38 +1636,51 @@
         }
         
         const newChannels = [];
-        const matchSections = doc.querySelectorAll(".match-section");
+        const matchCategories = doc.querySelectorAll(".match-category");
 
-        matchSections.forEach(section => {
-          const timeElement = section.querySelector(".time");
-          const matchNameElement = section.querySelector(".match-name");
-          const linksContainer = section.querySelector(".links");
+        matchCategories.forEach(category => {
+          const emojiElement = category.querySelector(".emoji-icon");
+          const titleElement = category.querySelector(".category-title");
           
-          if (!timeElement || !matchNameElement || !linksContainer) return;
-          
-          const time = timeElement.textContent.split(' ')[0].trim();
-          const matchName = matchNameElement.textContent.trim();
-          const links = linksContainer.querySelectorAll(".link-button");
-          
-          if (links.length === 0) return;
-          
-          links.forEach(link => {
-            const canalTexto = link.textContent.trim();
-            const canalMatch = canalTexto.match(/(.+?)\s*\(CH-(\d+)\)/i);
-            if (canalMatch) {
-              const nombreCanal = canalMatch[1].trim();
-              const numero = canalMatch[2];
-              const url = link.href.startsWith("http") ? link.href : "https://watchit.my/" + link.getAttribute("href");
+          if (!emojiElement || !titleElement) return;
 
-              newChannels.push({ 
-                number: numero, 
-                name: nombreCanal, 
-                url, 
-                time: time, 
-                event: matchName, 
-                sport: ""
-              });
-            }
+          const categorySport = titleElement.textContent.trim().replace(/\(\d+\)/, '').trim();
+          const categoryEmoji = emojiElement.textContent.trim();
+          
+          const matchSections = category.querySelectorAll(".match-section");
+
+          matchSections.forEach(section => {
+            const timeElement = section.querySelector(".time");
+            const matchNameElement = section.querySelector(".match-name");
+            const linksContainer = section.querySelector(".links");
+            
+            if (!timeElement || !matchNameElement || !linksContainer) return;
+            
+            const time = timeElement.textContent.split(' ')[0].trim();
+            const matchName = matchNameElement.textContent.trim();
+            const links = linksContainer.querySelectorAll(".link-button");
+            
+            if (links.length === 0) return;
+            
+            links.forEach(link => {
+              const canalTexto = link.textContent.trim();
+              const canalMatch = canalTexto.match(/(.+?)\s*\(CH-(\d+)\)/i);
+              if (canalMatch) {
+                const nombreCanal = canalMatch[1].trim();
+                const numero = canalMatch[2];
+                const url = link.href.startsWith("http") ? link.href : "https://watchit.my/" + link.getAttribute("href");
+
+                newChannels.push({ 
+                  number: numero, 
+                  name: nombreCanal, 
+                  url, 
+                  time: time, 
+                  event: matchName, 
+                  sport: categorySport,
+                  emoji: categoryEmoji
+                });
+              }
+            });
           });
         });
 
