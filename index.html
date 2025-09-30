@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=0.8, maximum-scale=0.8, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=0.7, maximum-scale=0.8, user-scalable=no">
   <title>📺</title>
   <style>
     :root {
@@ -948,7 +948,7 @@
     };
 
     const sportTranslations = {
-      'Football': 'Fútbol', 'Soccer': 'Fútbol', 'Futbol': 'Fútbol', 'Foot': 'Fútbol',
+      'All Soccer Events': 'Fútbol', 'Soccer': 'Fútbol', 'Futbol': 'Fútbol', 'Foot': 'Fútbol',
       'Basketball': 'Baloncesto', 'Basket': 'Baloncesto', 'Baloncesto': 'Baloncesto',
       'Boxing': 'Boxeo', 'Boxeo': 'Boxeo', 'Box': 'Boxeo',
       'Tennis': 'Tenis', 'Tenis': 'Tenis',
@@ -1422,7 +1422,7 @@
             }
             
             if (filter === "Fútbol") {
-              return /fútbol|futbol|football|soccer|foot/i.test(channel.sport + channel.event);
+              return /fútbol|futbol|football|soccer|All Soccer Events/i.test(channel.sport + channel.event);
             }
             if (filter === "Baloncesto") {
               return /baloncesto|basketball|basket/i.test(channel.sport + channel.event);
