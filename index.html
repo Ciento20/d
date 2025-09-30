@@ -1685,12 +1685,26 @@
           const categorySport = titleElement.textContent.trim().replace(/\(\d+\)/, '').trim();
           let categoryEmoji = emojiElement.textContent.trim();
           
-          // --- CORRECCIÓN DEL EMOJI PARA FÚTBOL ---
-          // Forzar el emoji ⚽ si el deporte extraído parece ser fútbol.
-          if (/soccer|fútbol|futbol|foot/i.test(categorySport)) {
+          // --- CORRECCIÓN DEL EMOJI PARA FÚTBOL, BÉISBOL, NHL y WNBA ---
+          const lowerCaseSport = categorySport.toLowerCase();
+          
+          // Regla 1: Fútbol
+          if (/soccer|fútbol|futbol|foot/i.test(lowerCaseSport)) {
               categoryEmoji = '⚽'; 
+          } 
+          // Regla 2: Béisbol (MLB) ⚾
+          else if (/baseball|beisbol|mlb/i.test(lowerCaseSport)) {
+              categoryEmoji = '⚾'; 
+          } 
+          // Regla 3: Hockey (NHL) 🏒
+          else if (/hockey|nhl/i.test(lowerCaseSport)) {
+              categoryEmoji = '🏒'; 
+          } 
+          // Regla 4: Baloncesto femenino (WNBA) 🏀
+          else if (/wnba/i.test(lowerCaseSport)) {
+              categoryEmoji = '🏀'; 
           }
-          // -----------------------------------------
+          // ---------------------------------------------------------------
           
           const matchSections = category.querySelectorAll(".match-section");
 
