@@ -1085,7 +1085,7 @@
     }
 
     function getEventIdentifier(channel) {
-      return `${channel.time}|${channel.event}|${channel.sport}`;
+      return `${channel.time}|${cleanEventName(channel.event)}|${channel.sport}`;
     }
 
     function findConflictedEvents() {
@@ -1368,7 +1368,19 @@
       document.getElementById('sortByTimeToggle').checked = state.sortByTime;
       renderResults();
     }
-
+    
+    // FUNCIÓN AÑADIDA PARA LIMPIAR EL NOMBRE DEL EVENTO
+    function cleanEventName(eventText) {
+      if (!eventText) return '';
+      // Expresión regular para buscar y eliminar un patrón como "Texto : "
+      const match = eventText.match(/^(.+?)\s*:\s*(.+)$/);
+      if (match && match[2]) {
+        return match[2].trim();
+      }
+      return eventText.trim();
+    }
+    // FIN DE LA FUNCIÓN AÑADIDA
+    
     function filterHistoryChannels() {
       return Object.entries(state.channelHistory).map(([number, data]) => {
         const currentChannel = state.channels.find(c => c.number === number);
@@ -1398,8 +1410,10 @@
             if (channel.number !== channelNumber) return false;
           } else {
             const translatedSport = translateSport(channel.sport).toLowerCase();
+            const cleanedEvent = cleanEventName(channel.event).toLowerCase();
+            
             if (!channel.name.toLowerCase().includes(term) && 
-                !channel.event.toLowerCase().includes(term) && 
+                !cleanedEvent.includes(term) && // Usamos el evento limpio aquí
                 !channel.sport.toLowerCase().includes(term) &&
                 !translatedSport.includes(term)) {
               return false;
@@ -1503,10 +1517,12 @@
       container.innerHTML = channels.map(channel => createChannelCard(channel)).join('');
     }
 
+    // MODIFICADA para usar cleanEventName
     function renderGroupedResults(channels, container) {
       const groups = {};
       channels.forEach(channel => {
-        const groupKey = `${adjustTime(channel.time)}|${channel.event}|${channel.sport}`;
+        const cleanedEvent = cleanEventName(channel.event); // Limpiamos el evento para agrupar
+        const groupKey = `${adjustTime(channel.time)}|${cleanedEvent}|${channel.sport}`;
         if (!groups[groupKey]) groups[groupKey] = [];
         groups[groupKey].push(channel);
       });
@@ -1514,11 +1530,18 @@
       container.innerHTML = '';
       
       Object.entries(groups).forEach(([groupKey, groupChannels]) => {
-        const [time, event, sport] = groupKey.split('|');
+        const [time, event, sport] = groupKey.split('|'); // 'event' ya está limpio
         const firstChannel = groupChannels[0];
-        const sportEmoji = firstChannel.emoji;
         const cleanedSport = sport.replace(/\(\d+\)/g, '').trim();
 
+        let sportEmoji = firstChannel.emoji;
+        const lowerCaseSport = sport.toLowerCase();
+        
+        // Sobrescribir el emoji si es un deporte relacionado con fútbol
+        if (lowerCaseSport.includes('fútbol') || lowerCaseSport.includes('soccer') || lowerCaseSport.includes('foot')) {
+            sportEmoji = '⚽';
+        }
+        
         const groupElement = document.createElement('div');
         groupElement.className = 'channel-group';
         groupElement.innerHTML = `
@@ -1526,8 +1549,7 @@
             <div class="channel-group__title">
               ${sportEmoji ? `<span class="emoji-icon">${sportEmoji}</span>` : ''}
               ${state.currentFilter !== 'history' ? `<span class="channel-time ${time === 'LIVE' ? 'channel-time--live' : ''}">${time}</span>` : `<span class="channel-time">${time}</span>`}
-              ${event}
-            </div>
+              ${event} </div>
             <div class="channel-group__sport">${translateSport(cleanedSport)}</div>
           </div>
           <div class="channel-group__content ${groupChannels.length === 1 ? 'channel-group__content--single' : ''}">
@@ -1538,23 +1560,40 @@
       });
     }
 
+    // MODIFICADA para usar cleanEventName y lógica de duplicidad
     function createChannelCard(channel) {
       const isFavorite = state.favorites.includes(channel.number);
       const isLive = isChannelLive(channel);
       const adjustedTime = adjustTime(channel.time);
       const cleanSport = channel.sport.replace(/\(\d+\)/g, '').trim();
       
+      const cleanedEvent = cleanEventName(channel.event); // Limpiamos el nombre del evento
+      
+      const shouldShowEvent = !state.groupChannels || state.currentFilter === 'history';
+      const eventContent = cleanedEvent; // Usamos el nombre ya limpio
+      const nameContent = channel.name.trim();
+
+      let eventHtml = '';
+      
+      if (shouldShowEvent && eventContent) {
+          // Si el nombre del canal contiene el texto del evento limpio, lo omitimos para evitar duplicidad.
+          // Ej: Si Nombre es "EFL Trophy CH-1" y Evento limpio es "EFL Trophy", se omite.
+          if (!nameContent.includes(eventContent)) {
+              eventHtml = `<div class="channel-event">${eventContent}</div>`;
+          }
+      }
+
       return `
         <div class="channel-card ${isFavorite ? 'channel-card--favorite' : ''}" onclick="playChannel(${JSON.stringify(channel).replace(/"/g, '&quot;')})">
           <div class="channel-header">
-            ${!state.groupChannels || state.currentFilter === 'history' ? `<div class="channel-time">${adjustedTime}</div>` : ''}
+            ${shouldShowEvent ? `<div class="channel-time">${adjustedTime}</div>` : ''}
             <div class="channel-name ${isLive && state.currentFilter !== 'history' ? 'channel-name--live' : ''}">
               ${channel.name}
             </div>
             <div class="channel-number">${channel.number}</div>
           </div>
-          ${!state.groupChannels || state.currentFilter === 'history' ? `<div class="channel-event">${channel.event}</div>` : ''}
-          ${!state.groupChannels || state.currentFilter === 'history' ? `<div class="channel-sport">${translateSport(cleanSport)}</div>` : ''}
+          ${eventHtml}
+          ${shouldShowEvent ? `<div class="channel-sport">${translateSport(cleanSport)}</div>` : ''}
         </div>
       `;
     }
@@ -1644,7 +1683,14 @@
           if (!emojiElement || !titleElement) return;
 
           const categorySport = titleElement.textContent.trim().replace(/\(\d+\)/, '').trim();
-          const categoryEmoji = emojiElement.textContent.trim();
+          let categoryEmoji = emojiElement.textContent.trim();
+          
+          // --- CORRECCIÓN DEL EMOJI PARA FÚTBOL ---
+          // Forzar el emoji ⚽ si el deporte extraído parece ser fútbol.
+          if (/soccer|fútbol|futbol|foot/i.test(categorySport)) {
+              categoryEmoji = '⚽'; 
+          }
+          // -----------------------------------------
           
           const matchSections = category.querySelectorAll(".match-section");
 
@@ -1676,7 +1722,7 @@
                   time: time, 
                   event: matchName, 
                   sport: categorySport,
-                  emoji: categoryEmoji
+                  emoji: categoryEmoji // Usa el emoji corregido
                 });
               }
             });
