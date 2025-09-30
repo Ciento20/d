@@ -989,17 +989,66 @@
       return sportTranslations[sport] || sport;
     }
 
+    // SOLUCIÓN DE TRADUCCIÓN ROBUSTA
+    /**
+     * Normaliza y traduce la cadena de fecha (día y mes).
+     * @param {string} dateStr - Cadena de fecha a traducir (ej: "Tuesday 30 September 2025").
+     * @returns {string} - Fecha traducida (ej: "Martes 30 de Septiembre de 2025"). O la original si falla.
+     */
     function translateDate(dateStr) {
-      const parts = dateStr.split(' ');
-      if (parts.length < 3) return dateStr;
+      if (!dateStr) return '';
       
-      const dayName = dayTranslations[parts[0]] || parts[0];
-      const month = monthTranslations[parts[1]] || parts[1];
-      const day = parts[2];
-      const year = parts[3];
-      
-      return `${dayName} ${day} de ${month} de ${year}`;
+      try {
+        // 1. Limpieza y división robusta: elimina caracteres no deseados y divide por uno o más espacios.
+        // Se mantiene solo letras, números y espacios.
+        const cleanedStr = dateStr.replace(/[^a-zA-Z0-9\s]/g, '').trim();
+        const parts = cleanedStr.split(/\s+/).filter(p => p.length > 0);
+        
+        // Esperamos al menos 3 partes (ej: DayName Day Month) o 4 (ej: DayName Day Month Year)
+        if (parts.length < 3) return dateStr;
+        
+        // Función para normalizar: 'september' -> 'September'
+        const normalizePart = (part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase();
+
+        let dayNamePart, dayOfMonthPart, monthNamePart, yearPart = '';
+
+        // Intento 1: Formato "DayName DayOfMonth MonthName Year" o "DayName MonthName DayOfMonth Year"
+        
+        // La fecha de watchit.my es "DayName DayOfMonth MonthName Year" 
+        // Ejemplo: 'Tuesday 30 September 2025'
+        
+        if (parts.length >= 4) {
+             dayNamePart = parts[0];
+             dayOfMonthPart = parts[1];
+             monthNamePart = parts[2];
+             yearPart = parts[3];
+        } 
+        // O puede ser solo "DayName DayOfMonth MonthName" (watchit.my usa 4 partes, pero por si acaso)
+        else if (parts.length === 3) {
+             dayNamePart = parts[0];
+             dayOfMonthPart = parts[1];
+             monthNamePart = parts[2];
+        }
+
+        if (!dayNamePart || !monthNamePart || !dayOfMonthPart) return dateStr;
+
+        const dayNameKey = normalizePart(dayNamePart);
+        const monthKey = normalizePart(monthNamePart);
+
+        // 2. Traducción usando las claves normalizadas
+        const dayName = dayTranslations[dayNameKey] || dayNamePart;
+        const month = monthTranslations[monthKey] || monthNamePart;
+        
+        // 3. Formato final: 'Martes 30 de Septiembre de 2025'
+        const yearSegment = yearPart ? ` de ${yearPart}` : '';
+        return `${dayName} ${dayOfMonthPart} de ${month}${yearSegment}`.trim();
+        
+      } catch (e) {
+        console.error("Error en translateDate, devolviendo original:", e);
+        return dateStr;
+      }
     }
+    // FIN SOLUCIÓN DE TRADUCCIÓN ROBUSTA
 
     function adjustTime(time) {
       if (!time || time === 'LIVE') return time;
@@ -1529,7 +1578,20 @@
       
       container.innerHTML = '';
       
-      Object.entries(groups).forEach(([groupKey, groupChannels]) => {
+      Object.entries(groups).sort((a, b) => {
+        const timeA = a[0].split('|')[0];
+        const timeB = b[0].split('|')[0];
+        
+        if (timeA === 'LIVE' && timeB !== 'LIVE') return -1;
+        if (timeA !== 'LIVE' && timeB === 'LIVE') return 1;
+        if (timeA === 'LIVE' && timeB === 'LIVE') return 0;
+        
+        const timePartsA = timeA.split(':').map(Number);
+        const timePartsB = timeB.split(':').map(Number);
+        
+        if (timePartsA[0] !== timePartsB[0]) return timePartsA[0] - timePartsB[0];
+        return timePartsA[1] - timePartsB[1];
+      }).forEach(([groupKey, groupChannels]) => {
         const [time, event, sport] = groupKey.split('|'); // 'event' ya está limpio
         const firstChannel = groupChannels[0];
         const cleanedSport = sport.replace(/\(\d+\)/g, '').trim();
@@ -1538,8 +1600,16 @@
         const lowerCaseSport = sport.toLowerCase();
         
         // Sobrescribir el emoji si es un deporte relacionado con fútbol
-        if (lowerCaseSport.includes('fútbol') || lowerCaseSport.includes('soccer') || lowerCaseSport.includes('foot')) {
+        if (/soccer|fútbol|futbol|foot/i.test(lowerCaseSport)) {
             sportEmoji = '⚽';
+        } else if (/basketball|baloncesto|basket/i.test(lowerCaseSport)) {
+            sportEmoji = '🏀';
+        } else if (/tennis|tenis/i.test(lowerCaseSport)) {
+            sportEmoji = '🎾';
+        } else if (/boxing|boxeo|box/i.test(lowerCaseSport)) {
+            sportEmoji = '🥊';
+        } else if (/formula 1|f1/i.test(lowerCaseSport)) {
+            sportEmoji = '🏎️';
         }
         
         const groupElement = document.createElement('div');
@@ -1663,12 +1733,15 @@
         let fechaExtraida = "";
         
         if (scheduleTitle) {
+          // La fecha a traducir es la primera parte del texto antes del '–'
           const titleText = scheduleTitle.textContent.split('–')[0].trim();
-          fechaExtraida = titleText;
+          
+          // Se usa la función de traducción robusta
+          fechaExtraida = translateDate(titleText);
         }
         
         if (fechaExtraida) {
-          document.getElementById('fecha').textContent = translateDate(fechaExtraida);
+          document.getElementById('fecha').textContent = fechaExtraida;
         } else {
           document.getElementById('fecha').textContent = "Fecha no reconocida";
         }
