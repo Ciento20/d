@@ -929,8 +929,6 @@
       channelHistory: JSON.parse(localStorage.getItem('channelHistory')) || {},
       currentChannel: null,
       baseDomain: localStorage.getItem('baseDomain') || 'watchit.my',
-      clearButtonClickCount: 0,
-      lastClearButtonClickTime: 0,
       internationalFilter: localStorage.getItem('internationalFilter') === 'true',
       groupChannels: localStorage.getItem('groupChannels') === 'true',
       sortByTime: localStorage.getItem('sortByTime') === 'true',
@@ -989,41 +987,28 @@
       return sportTranslations[sport] || sport;
     }
 
-    // SOLUCIÓN DE TRADUCCIÓN ROBUSTA
     /**
      * Normaliza y traduce la cadena de fecha (día y mes).
-     * @param {string} dateStr - Cadena de fecha a traducir (ej: "Tuesday 30 September 2025").
-     * @returns {string} - Fecha traducida (ej: "Martes 30 de Septiembre de 2025"). O la original si falla.
      */
     function translateDate(dateStr) {
       if (!dateStr) return '';
       
       try {
-        // 1. Limpieza y división robusta: elimina caracteres no deseados y divide por uno o más espacios.
-        // Se mantiene solo letras, números y espacios.
         const cleanedStr = dateStr.replace(/[^a-zA-Z0-9\s]/g, '').trim();
         const parts = cleanedStr.split(/\s+/).filter(p => p.length > 0);
         
-        // Esperamos al menos 3 partes (ej: DayName Day Month) o 4 (ej: DayName Day Month Year)
         if (parts.length < 3) return dateStr;
         
-        // Función para normalizar: 'september' -> 'September'
         const normalizePart = (part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase();
 
         let dayNamePart, dayOfMonthPart, monthNamePart, yearPart = '';
 
-        // Intento 1: Formato "DayName DayOfMonth MonthName Year" o "DayName MonthName DayOfMonth Year"
-        
-        // La fecha de watchit.my es "DayName DayOfMonth MonthName Year" 
-        // Ejemplo: 'Tuesday 30 September 2025'
-        
         if (parts.length >= 4) {
              dayNamePart = parts[0];
              dayOfMonthPart = parts[1];
              monthNamePart = parts[2];
              yearPart = parts[3];
         } 
-        // O puede ser solo "DayName DayOfMonth MonthName" (watchit.my usa 4 partes, pero por si acaso)
         else if (parts.length === 3) {
              dayNamePart = parts[0];
              dayOfMonthPart = parts[1];
@@ -1035,11 +1020,9 @@
         const dayNameKey = normalizePart(dayNamePart);
         const monthKey = normalizePart(monthNamePart);
 
-        // 2. Traducción usando las claves normalizadas
         const dayName = dayTranslations[dayNameKey] || dayNamePart;
         const month = monthTranslations[monthKey] || monthNamePart;
         
-        // 3. Formato final: 'Martes 30 de Septiembre de 2025'
         const yearSegment = yearPart ? ` de ${yearPart}` : '';
         return `${dayName} ${dayOfMonthPart} de ${month}${yearSegment}`.trim();
         
@@ -1048,7 +1031,6 @@
         return dateStr;
       }
     }
-    // FIN SOLUCIÓN DE TRADUCCIÓN ROBUSTA
 
     function adjustTime(time) {
       if (!time || time === 'LIVE') return time;
@@ -1418,17 +1400,14 @@
       renderResults();
     }
     
-    // FUNCIÓN AÑADIDA PARA LIMPIAR EL NOMBRE DEL EVENTO
     function cleanEventName(eventText) {
       if (!eventText) return '';
-      // Expresión regular para buscar y eliminar un patrón como "Texto : "
       const match = eventText.match(/^(.+?)\s*:\s*(.+)$/);
       if (match && match[2]) {
         return match[2].trim();
       }
       return eventText.trim();
     }
-    // FIN DE LA FUNCIÓN AÑADIDA
     
     function filterHistoryChannels() {
       return Object.entries(state.channelHistory).map(([number, data]) => {
@@ -1462,7 +1441,7 @@
             const cleanedEvent = cleanEventName(channel.event).toLowerCase();
             
             if (!channel.name.toLowerCase().includes(term) && 
-                !cleanedEvent.includes(term) && // Usamos el evento limpio aquí
+                !cleanedEvent.includes(term) && 
                 !channel.sport.toLowerCase().includes(term) &&
                 !translatedSport.includes(term)) {
               return false;
@@ -1566,11 +1545,10 @@
       container.innerHTML = channels.map(channel => createChannelCard(channel)).join('');
     }
 
-    // MODIFICADA para usar cleanEventName
     function renderGroupedResults(channels, container) {
       const groups = {};
       channels.forEach(channel => {
-        const cleanedEvent = cleanEventName(channel.event); // Limpiamos el evento para agrupar
+        const cleanedEvent = cleanEventName(channel.event);
         const groupKey = `${adjustTime(channel.time)}|${cleanedEvent}|${channel.sport}`;
         if (!groups[groupKey]) groups[groupKey] = [];
         groups[groupKey].push(channel);
@@ -1592,22 +1570,21 @@
         if (timePartsA[0] !== timePartsB[0]) return timePartsA[0] - timePartsB[0];
         return timePartsA[1] - timePartsB[1];
       }).forEach(([groupKey, groupChannels]) => {
-        const [time, event, sport] = groupKey.split('|'); // 'event' ya está limpio
+        const [time, event, sport] = groupKey.split('|');
         const firstChannel = groupChannels[0];
         const cleanedSport = sport.replace(/\(\d+\)/g, '').trim();
 
         let sportEmoji = firstChannel.emoji;
         const lowerCaseSport = sport.toLowerCase();
         
-        // Sobrescribir el emoji si es un deporte relacionado con fútbol
         if (/soccer|fútbol|futbol|foot/i.test(lowerCaseSport)) {
             sportEmoji = '⚽';
         } else if (/basketball|baloncesto|basket/i.test(lowerCaseSport)) {
             sportEmoji = '🏀';
-        } else if (/tennis|tenis/i.test(lowerCaseSport)) {
-            sportEmoji = '🎾';
         } else if (/boxing|boxeo|box/i.test(lowerCaseSport)) {
             sportEmoji = '🥊';
+        } else if (/tennis|tenis/i.test(lowerCaseSport)) {
+            sportEmoji = '🎾';
         } else if (/formula 1|f1/i.test(lowerCaseSport)) {
             sportEmoji = '🏎️';
         }
@@ -1630,24 +1607,21 @@
       });
     }
 
-    // MODIFICADA para usar cleanEventName y lógica de duplicidad
     function createChannelCard(channel) {
       const isFavorite = state.favorites.includes(channel.number);
       const isLive = isChannelLive(channel);
       const adjustedTime = adjustTime(channel.time);
       const cleanSport = channel.sport.replace(/\(\d+\)/g, '').trim();
       
-      const cleanedEvent = cleanEventName(channel.event); // Limpiamos el nombre del evento
+      const cleanedEvent = cleanEventName(channel.event);
       
       const shouldShowEvent = !state.groupChannels || state.currentFilter === 'history';
-      const eventContent = cleanedEvent; // Usamos el nombre ya limpio
+      const eventContent = cleanedEvent;
       const nameContent = channel.name.trim();
 
       let eventHtml = '';
       
       if (shouldShowEvent && eventContent) {
-          // Si el nombre del canal contiene el texto del evento limpio, lo omitimos para evitar duplicidad.
-          // Ej: Si Nombre es "EFL Trophy CH-1" y Evento limpio es "EFL Trophy", se omite.
           if (!nameContent.includes(eventContent)) {
               eventHtml = `<div class="channel-event">${eventContent}</div>`;
           }
@@ -1733,10 +1707,7 @@
         let fechaExtraida = "";
         
         if (scheduleTitle) {
-          // La fecha a traducir es la primera parte del texto antes del '–'
           const titleText = scheduleTitle.textContent.split('–')[0].trim();
-          
-          // Se usa la función de traducción robusta
           fechaExtraida = translateDate(titleText);
         }
         
@@ -1758,26 +1729,20 @@
           const categorySport = titleElement.textContent.trim().replace(/\(\d+\)/, '').trim();
           let categoryEmoji = emojiElement.textContent.trim();
           
-          // --- CORRECCIÓN DEL EMOJI PARA FÚTBOL, BÉISBOL, NHL y WNBA ---
           const lowerCaseSport = categorySport.toLowerCase();
           
-          // Regla 1: Fútbol
           if (/soccer|fútbol|futbol|foot/i.test(lowerCaseSport)) {
               categoryEmoji = '⚽'; 
           } 
-          // Regla 2: Béisbol (MLB) ⚾
           else if (/baseball|beisbol|mlb/i.test(lowerCaseSport)) {
               categoryEmoji = '⚾'; 
           } 
-          // Regla 3: Hockey (NHL) 🏒
           else if (/hockey|nhl/i.test(lowerCaseSport)) {
               categoryEmoji = '🏒'; 
           } 
-          // Regla 4: Baloncesto femenino (WNBA) 🏀
           else if (/wnba/i.test(lowerCaseSport)) {
               categoryEmoji = '🏀'; 
           }
-          // ---------------------------------------------------------------
           
           const matchSections = category.querySelectorAll(".match-section");
 
@@ -1809,7 +1774,7 @@
                   time: time, 
                   event: matchName, 
                   sport: categorySport,
-                  emoji: categoryEmoji // Usa el emoji corregido
+                  emoji: categoryEmoji
                 });
               }
             });
@@ -1831,18 +1796,15 @@
       }
     }
 
-    function handleClearButtonClick() {
-      const now = Date.now();
-      if (now - state.lastClearButtonClickTime > 1000) state.clearButtonClickCount = 0;
-      state.clearButtonClickCount++;
-      state.lastClearButtonClickTime = now;
-      
-      if (state.clearButtonClickCount >= 3) {
-        document.getElementById('settingsModal').classList.add('modal--active');
-        state.clearButtonClickCount = 0;
-      } else {
-        clearEmojiFilters();
+    function handleClearButtonClick(e) {
+      // Si la variable isLongPress es verdadera, significa que ya se ha abierto el modal
+      // y no queremos ejecutar la función de click normal (limpiar filtros).
+      if (e && e.detail === 0) return; // Esto previene el click simulado por touchstart/long press en algunos navegadores
+      if (window.isLongPressActive) {
+          window.isLongPressActive = false; // Reinicia la bandera
+          return; // Detiene la ejecución del click normal
       }
+      clearEmojiFilters();
     }
 
     function handleOnlineStatusChange() {
@@ -1901,7 +1863,60 @@
       document.getElementById('filterLive').addEventListener('click', () => applyFilter('live'));
       document.getElementById('filterFavorites').addEventListener('click', () => applyFilter('favorites'));
       document.getElementById('filterHistory').addEventListener('click', () => applyFilter('history'));
-      document.getElementById('clearEmojiFilters').addEventListener('click', handleClearButtonClick);
+      
+      // ----------------------------------------------------------------------
+      // INICIO DEL MANEJO DE EVENTOS CORREGIDO (LONG PRESS)
+      // ----------------------------------------------------------------------
+      const clearFiltersBtn = document.getElementById('clearEmojiFilters');
+      let pressTimer;
+      const LONG_PRESS_DURATION = 700;
+      window.isLongPressActive = false; // Bandera global para el estado de long press
+
+      const openSettingsModal = () => {
+          window.isLongPressActive = true; // Establece la bandera cuando se ejecuta el long press
+          document.getElementById('settingsModal').classList.add('modal--active');
+          // No es necesario llamar a stopPressTimerAndExecuteClick, ya que el mousedown termina aquí.
+      }
+      
+      const startPressTimer = (e) => {
+          // Previene la repetición del evento de click si es un dispositivo táctil
+          if (e.type === 'touchstart') {
+             // Es importante agregar preventDefault() a touchstart para evitar el comportamiento de click después del touchend
+             e.preventDefault(); 
+          }
+          
+          // Solo si es el botón izquierdo del ratón o el primer toque
+          if (e.button !== 0 && e.type === 'mousedown') return; 
+          if (pressTimer) clearTimeout(pressTimer); // Limpiar por si acaso
+
+          pressTimer = setTimeout(openSettingsModal, LONG_PRESS_DURATION);
+      };
+
+      const stopPressTimer = (e) => {
+          if (pressTimer) {
+              clearTimeout(pressTimer);
+              pressTimer = null;
+          }
+      };
+
+      // Eventos de ratón
+      clearFiltersBtn.addEventListener('mousedown', startPressTimer);
+      clearFiltersBtn.addEventListener('mouseup', stopPressTimer);
+      clearFiltersBtn.addEventListener('mouseleave', stopPressTimer);
+      
+      // Eventos táctiles para dispositivos móviles
+      clearFiltersBtn.addEventListener('touchstart', startPressTimer);
+      clearFiltersBtn.addEventListener('touchend', stopPressTimer);
+      clearFiltersBtn.addEventListener('touchcancel', stopPressTimer);
+
+      // Evento Click: Se dispara *después* de mouseup o touchend.
+      // Aquí usamos la bandera `isLongPressActive` para bloquear la acción normal (limpiar filtros).
+      clearFiltersBtn.addEventListener('click', handleClearButtonClick);
+      
+      // ----------------------------------------------------------------------
+      // FIN DEL MANEJO DE EVENTOS CORREGIDO (LONG PRESS)
+      // ----------------------------------------------------------------------
+
       document.querySelectorAll('.emoji-filter-btn').forEach(btn => btn.addEventListener('click', () => toggleEmojiFilter(btn.dataset.filter, btn)));
       document.getElementById('searchInput').addEventListener('input', handleSearchInput);
       document.getElementById('searchInput').addEventListener('keypress', (e) => {
