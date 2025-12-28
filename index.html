@@ -1694,7 +1694,7 @@
           return;
         }
         
-        const proxyUrl = "https://api.allorigins.win/raw?url=" + encodeURIComponent("https://gamestrend.net/daily-event");
+        const proxyUrl = "https://api.allorigins.win/raw?url=" + encodeURIComponent("https://daddylives.top/match-schedule/");
         const response = await fetch(proxyUrl);
         
         if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
@@ -1703,38 +1703,81 @@
         const parser = new DOMParser();
         const doc = parser.parseFromString(html, "text/html");
         
-        const scheduleTitle = doc.querySelector("h1, .page-title");
-        let fechaExtraida = scheduleTitle ? translateDate(scheduleTitle.textContent.trim()) : "Eventos de Hoy";
-        document.getElementById('fecha').textContent = fechaExtraida;
+        const scheduleTitle = doc.querySelector("h1, .daddy-schedule-title, .entry-title");
+        let fechaExtraida = "";
+        
+        if (scheduleTitle) {
+          const titleText = scheduleTitle.textContent.split('–')[0].trim();
+          fechaExtraida = translateDate(titleText);
+        }
+        
+        if (fechaExtraida) {
+          document.getElementById('fecha').textContent = fechaExtraida;
+        } else {
+          document.getElementById('fecha').textContent = "Fecha no reconocida";
+        }
         
         const newChannels = [];
-        const articles = doc.querySelectorAll("article.event");
+        const matchCategories = doc.querySelectorAll(".match-category");
 
-        articles.forEach((article, index) => {
-          const timeElement = article.querySelector(".time");
-          const teamsElement = article.querySelector(".teams");
-          const leagueElement = article.querySelector(".league");
-          const linkElement = article.querySelector(".link a");
+        matchCategories.forEach(category => {
+          const emojiElement = category.querySelector(".emoji-icon");
+          const titleElement = category.querySelector(".category-title");
           
-          if (!teamsElement || !linkElement) return;
+          if (!emojiElement || !titleElement) return;
 
-          const sportType = article.getAttribute("data-league") || "Sports";
-          const time = timeElement ? timeElement.textContent.replace(/ ET/g, "").trim() : "LIVE";
-          const eventName = teamsElement.textContent.trim();
-          const leagueName = leagueElement ? leagueElement.textContent.trim() : "";
+          const categorySport = titleElement.textContent.trim().replace(/\(\d+\)/, '').trim();
+          let categoryEmoji = emojiElement.textContent.trim();
           
-          // Generar un número de canal basado en el ID o posición
-          const dataId = article.getAttribute("data-id") || "";
-          const channelNumber = (index + 1).toString();
+          const lowerCaseSport = categorySport.toLowerCase();
+          
+          if (/soccer|fútbol|futbol|foot/i.test(lowerCaseSport)) {
+              categoryEmoji = '⚽'; 
+          } 
+          else if (/baseball|beisbol|mlb/i.test(lowerCaseSport)) {
+              categoryEmoji = '⚾'; 
+          } 
+          else if (/hockey|nhl/i.test(lowerCaseSport)) {
+              categoryEmoji = '🏒'; 
+          } 
+          else if (/wnba/i.test(lowerCaseSport)) {
+              categoryEmoji = '🏀'; 
+          }
+          
+          const matchSections = category.querySelectorAll(".match-section");
 
-          newChannels.push({
-            number: channelNumber,
-            name: leagueName || "Live Event",
-            url: linkElement.href,
-            time: time,
-            event: eventName,
-            sport: sportType,
-            emoji: sportType.includes("Soccer") ? "⚽" : "📺"
+          matchSections.forEach(section => {
+            const timeElement = section.querySelector(".time");
+            const matchNameElement = section.querySelector(".match-name");
+            const linksContainer = section.querySelector(".links");
+            
+            if (!timeElement || !matchNameElement || !linksContainer) return;
+            
+            const time = timeElement.textContent.split(' ')[0].trim();
+            const matchName = matchNameElement.textContent.trim();
+            const links = linksContainer.querySelectorAll(".link-button");
+            
+            if (links.length === 0) return;
+            
+            links.forEach(link => {
+              const canalTexto = link.textContent.trim();
+              const canalMatch = canalTexto.match(/(.+?)\s*\(CH-(\d+)\)/i);
+              if (canalMatch) {
+                const nombreCanal = canalMatch[1].trim();
+                const numero = canalMatch[2];
+                const url = link.href.startsWith("http") ? link.href : "https://watchit.my/" + link.getAttribute("href");
+
+                newChannels.push({ 
+                  number: numero, 
+                  name: nombreCanal, 
+                  url: `https://daddylives.top/stream-${numero}.php`, 
+                  time: time, 
+                  event: matchName, 
+                  sport: categorySport,
+                  emoji: categoryEmoji
+                });
+              }
+            });
           });
         });
 
