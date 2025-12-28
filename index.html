@@ -924,8 +924,8 @@
       channels: JSON.parse(localStorage.getItem('channelsCache')) || [],
       currentFilter: 'all',
       searchTerm: '',
-      activeEmojiFilters: [],
-      favorites: JSON.parse(localStorage.getItem('favorites')) || [],
+      activeEmojiFilters: [],      favorites: JSON.parse(localStorage.getItem('favorites')) || [],
+      customNames: JSON.parse(localStorage.getItem('customNames')) || {},
       channelHistory: JSON.parse(localStorage.getItem('channelHistory')) || {},
       currentChannel: null,
       baseDomain: localStorage.getItem('baseDomain') || 'watchit.my',
@@ -1240,8 +1240,7 @@
       }
       
       document.getElementById('playerContainer').classList.add('player-container--active');
-      document.getElementById('playerControls').classList.add('player-controls--active');
-      document.getElementById('channelInfo').textContent = channel.name;
+      document.getElementById('playerControls').classList.add('player-controls--active');      document.getElementById('channelInfo').textContent = state.customNames[channel.number] || channel.name;
       document.getElementById('channelNumberDisplay').textContent = `CH-${channel.number}`;
       document.getElementById('favoriteBtn').classList.toggle('control-btn--active', state.favorites.includes(channel.number));
       
@@ -1308,22 +1307,25 @@
         stickyBtn.innerHTML = '⛊';
         stickyBtn.title = "Fijar reproductor";
       }
-    }
-
-    function showFavoriteModal() {
+    }    function showFavoriteModal() {
       if (!state.currentChannel) return;
-      document.getElementById('favoriteNameInput').value = state.currentChannel.name;
+      const savedName = state.customNames[state.currentChannel.number] || state.currentChannel.name;
+      document.getElementById('favoriteNameInput').value = savedName;
       document.getElementById('favoriteModal').classList.add('modal--active');
     }
 
     function hideFavoriteModal() {
       document.getElementById('favoriteModal').classList.remove('modal--active');
-    }
-
-    function saveFavorite() {
+    }    function saveFavorite() {
       if (!state.currentChannel) return;
       const channelNumber = state.currentChannel.number;
+      const newName = document.getElementById('favoriteNameInput').value.trim();
       
+      if (newName) {
+        state.customNames[channelNumber] = newName;
+        localStorage.setItem('customNames', JSON.stringify(state.customNames));
+      }
+
       if (!state.favorites.includes(channelNumber)) {
         state.favorites.push(channelNumber);
         localStorage.setItem('favorites', JSON.stringify(state.favorites));
@@ -1331,7 +1333,7 @@
       }
       
       hideFavoriteModal();
-      if (state.currentFilter === 'favorites') renderResults();
+      renderResults();
     }
 
     function removeFavorite() {
@@ -1616,8 +1618,7 @@
       const cleanedEvent = cleanEventName(channel.event);
       
       const shouldShowEvent = !state.groupChannels || state.currentFilter === 'history';
-      const eventContent = cleanedEvent;
-      const nameContent = channel.name.trim();
+      const eventContent = cleanedEvent;      const nameContent = state.customNames[channel.number] || channel.name.trim();
 
       let eventHtml = '';
       
@@ -1632,7 +1633,7 @@
           <div class="channel-header">
             ${shouldShowEvent ? `<div class="channel-time">${adjustedTime}</div>` : ''}
             <div class="channel-name ${isLive && state.currentFilter !== 'history' ? 'channel-name--live' : ''}">
-              ${channel.name}
+              ${nameContent}
             </div>
             <div class="channel-number">${channel.number}</div>
           </div>
