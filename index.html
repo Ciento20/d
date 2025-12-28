@@ -1757,25 +1757,30 @@
             const matchName = matchNameElement.textContent.trim();
             const links = linksContainer.querySelectorAll(".link-button");
             
-            if (links.length === 0) return;
-            
-            links.forEach(link => {
+            if (links.length === 0) return;            links.forEach(link => {
               const canalTexto = link.textContent.trim();
-              const canalMatch = canalTexto.match(/(.+?)\s*\(CH-(\d+)\)/i);
+              // Detectar formato "CH-123"
+              const canalMatch = canalTexto.match(/CH-(\d+)/i);
+              
               if (canalMatch) {
-                const nombreCanal = canalMatch[1].trim();
-                const numero = canalMatch[2];
-                const url = link.href.startsWith("http") ? link.href : "https://watchit.my/" + link.getAttribute("href");
-
-                newChannels.push({ 
-                  number: numero, 
-                  name: nombreCanal, 
-                  url: `https://daddylives.top/stream-${numero}.php`, 
-                  time: time, 
-                  event: matchName, 
-                  sport: categorySport,
-                  emoji: categoryEmoji
-                });
+                const numero = canalMatch[1];
+                // Priorizar el nombre del link, si no, usar el nombre del evento como referencia
+                const nombreCanal = canalTexto;
+                
+                // Extraer URL del nuevo atributo data-watch-url o del href
+                let watchUrl = link.getAttribute('data-watch-url') || link.getAttribute('href') || '';
+                
+                if (numero) {
+                  newChannels.push({ 
+                    number: numero, 
+                    name: nombreCanal, 
+                    url: watchUrl.includes('http') ? watchUrl : `https://daddylives.top/stream-${numero}.php`, 
+                    time: time, 
+                    event: matchName, 
+                    sport: categorySport,
+                    emoji: categoryEmoji
+                  });
+                }
               }
             });
           });
