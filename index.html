@@ -854,9 +854,11 @@
           </div>
           <div class="domain-select-container">
             <select id="baseDomainSelect" class="domain-select">
-              <option value="yeahstreams.com/plus/">watchit.my</option>
-              <option value="thedaddy.top">thedaddy.top</option>
-              <option value="daddylivestream.com">daddylivestream.com</option>
+              <option value="yeahstreams.com/plus/">YeahStreams</option>
+              <option value="daddyhd.com/casting/">DaddyHD</option>
+              <option value="abbasport.online/footy.php?id=">AbbaSport</option>
+              <option value="footballschedule.online/albaplayer/">AlbaPlayer</option>
+              <option value="daddylives.top/watch.php?id=">DaddyLives</option>
             </select>
           </div>
         </div>
@@ -1247,7 +1249,13 @@
       const videoFrame = document.getElementById('videoFrame');
       
       if (state.isOnline) {
-        videoFrame.src = `https://${state.baseDomain}/embed/stream-${channel.number}.php`;
+        if (state.baseDomain.includes('php?id=')) {
+          videoFrame.src = `https://${state.baseDomain}${channel.number}`;
+        } else if (state.baseDomain.includes('albaplayer')) {
+          videoFrame.src = `https://${state.baseDomain}stream-${channel.number}/?serv=5`;
+        } else {
+          videoFrame.src = `https://${state.baseDomain}stream-${channel.number}.php`;
+        }
       }
 
       if (state.baseDomain === 'watchit.my') {
