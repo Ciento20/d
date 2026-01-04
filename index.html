@@ -854,9 +854,9 @@
           </div>
           <div class="domain-select-container">
             <select id="baseDomainSelect" class="domain-select">
+              <option value="yeahstreams.com/plus">yeahstreams.com/plus</option>
               <option value="watchit.my">watchit.my</option>
               <option value="thedaddy.top">thedaddy.top</option>
-              <option value="daddylivestream.com">daddylivestream.com</option>
             </select>
           </div>
         </div>
@@ -928,7 +928,7 @@
       customNames: JSON.parse(localStorage.getItem('customNames')) || {},
       channelHistory: JSON.parse(localStorage.getItem('channelHistory')) || {},
       currentChannel: null,
-      baseDomain: localStorage.getItem('baseDomain') || 'watchit.my',
+      baseDomain: localStorage.getItem('baseDomain') || 'yeahstreams.com/plus',
       internationalFilter: localStorage.getItem('internationalFilter') === 'true',
       groupChannels: localStorage.getItem('groupChannels') === 'true',
       sortByTime: localStorage.getItem('sortByTime') === 'true',
@@ -987,22 +987,14 @@
       return sportTranslations[sport] || sport;
     }
 
-    /**
-     * Normaliza y traduce la cadena de fecha (día y mes).
-     */
     function translateDate(dateStr) {
       if (!dateStr) return '';
-      
       try {
         const cleanedStr = dateStr.replace(/[^a-zA-Z0-9\s]/g, '').trim();
         const parts = cleanedStr.split(/\s+/).filter(p => p.length > 0);
-        
         if (parts.length < 3) return dateStr;
-        
         const normalizePart = (part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase();
-
         let dayNamePart, dayOfMonthPart, monthNamePart, yearPart = '';
-
         if (parts.length >= 4) {
              dayNamePart = parts[0];
              dayOfMonthPart = parts[1];
@@ -1014,20 +1006,15 @@
              dayOfMonthPart = parts[1];
              monthNamePart = parts[2];
         }
-
         if (!dayNamePart || !monthNamePart || !dayOfMonthPart) return dateStr;
-
         const dayNameKey = normalizePart(dayNamePart);
         const monthKey = normalizePart(monthNamePart);
-
         const dayName = dayTranslations[dayNameKey] || dayNamePart;
         const month = monthTranslations[monthKey] || monthNamePart;
-        
         const yearSegment = yearPart ? ` de ${yearPart}` : '';
         return `${dayName} ${dayOfMonthPart} de ${month}${yearSegment}`.trim();
-        
       } catch (e) {
-        console.error("Error en translateDate, devolviendo original:", e);
+        console.error("Error en translateDate:", e);
         return dateStr;
       }
     }
@@ -1043,7 +1030,6 @@
       const sport = channel.sport?.toLowerCase() || '';
       const event = (channel.event?.toLowerCase() || '').replace(/[^\w\sáéíóúüñ]/gi, '');
       const name = channel.name.toLowerCase();
-
       if (/(fútbol|soccer|football)/.test(sport)) {
         if (/amistoso|friendly/.test(event)) return 115;
         if (/champions|europa league|libertadores/.test(event)) return 150;
@@ -1060,58 +1046,13 @@
         return 180;
       } else if (/(balonmano|handball)/.test(sport)) {
         return 90;
-      } else if (/(rugby)/.test(sport)) {
-        return 120;
-      } else if (/(hockey|hielo)/.test(sport)) {
-        if (/nhl/.test(name)) return 150;
-        return 120;
       } else if (/(tenis|tennis)/.test(sport)) {
         if (/grand slam|wimbledon|open|final/.test(event)) return 300;
-        if (/doble|dobles|double/.test(event)) return 180;
         return 150;
-      } else if (/(golf)/.test(sport)) {
-        if (/final|última ronda|last round/.test(event)) return 360;
-        return 480;
       } else if (/(motorsport|fórmula|formula)/.test(sport)) {
         if (/f1|gran premio|grand prix/.test(event)) return 180;
-        if (/moto gp|motogp/.test(event)) return 120;
-        if (/24h|24 horas|le mans/.test(event)) return 1440;
         return 240;
-      } else if (/(ciclismo|cycling)/.test(sport)) {
-        if (/etapa|stage/.test(event)) return 300;
-        if (/clásica|monumento/.test(event)) return 240;
-        if (/contrarreloj|time trial/.test(event)) return 180;
-        return 360;
-      } else if (/(boxeo|boxing)/.test(sport)) {
-        if (/main event|combate principal/.test(event)) return 60;
-        if (/pelea|fight|preliminar/.test(event)) return 30;
-        return 180;
-      } else if (/(mma|ufc)/.test(sport)) {
-        if (/main event|combate principal/.test(event)) return 75;
-        if (/co-main|coestelar/.test(event)) return 50;
-        if (/pelea|fight|preliminar/.test(event)) return 15;
-        return 240;
-      } else if (/(esports|videojuegos)/.test(sport)) {
-        if (/torneo|tournament/.test(event)) return 240;
-        if (/final|championship/.test(event)) return 120;
-        if (/partida|match|mejor de/.test(event)) return 90;
-        return 180;
-      } else if (/(atletismo|athletics)/.test(sport)) {
-        if (/maratón|marathon/.test(event)) return 480;
-        if (/decatlón|heptatlón/.test(event)) return 360;
-        return 120;
-      } else if (/(natación|swimming)/.test(sport)) {
-        return 120;
-      } else if (/(tv shows|tv show)/.test(sport)) {
-        return 60;
-      } else if (/(reality)/.test(sport)) {
-        return 90;
-      } else if (/(documental|documentary)/.test(sport)) {
-        return 120;
-      } else if (/(especial|special)/.test(sport)) {
-        return 180;
       }
-      
       return 120;
     }
 
@@ -1122,10 +1063,8 @@
     function findConflictedEvents() {
       const eventGroups = {};
       const channelToEventsMap = {};
-      
       state.channels.forEach(channel => {
         const eventId = getEventIdentifier(channel);
-        
         if (!eventGroups[eventId]) {
           eventGroups[eventId] = {
             channels: [],
@@ -1134,64 +1073,43 @@
           };
         }
         eventGroups[eventId].channels.push(channel);
-        
         if (!channelToEventsMap[channel.number]) {
           channelToEventsMap[channel.number] = [];
         }
         channelToEventsMap[channel.number].push(eventId);
       });
-      
       const conflictedEvents = new Set();
-      
       Object.entries(eventGroups).forEach(([eventId, eventData]) => {
         eventData.channels.forEach(channel => {
           const allEventsForThisChannel = channelToEventsMap[channel.number] || [];
-          
           const hasNewerEvent = allEventsForThisChannel.some(otherEventId => {
             if (otherEventId === eventId) return false;
-            
             const otherEvent = eventGroups[otherEventId];
             return otherEvent.time > eventData.time;
           });
-          
-          if (hasNewerEvent) {
-            conflictedEvents.add(eventId);
-          }
+          if (hasNewerEvent) conflictedEvents.add(eventId);
         });
       });
-      
       return conflictedEvents;
     }
 
     function isChannelLive(channel) {
       if (state.currentFilter === 'history') return false;
-      
-      if (!state._conflictedEvents) {
-        state._conflictedEvents = findConflictedEvents();
-      }
-      
+      if (!state._conflictedEvents) state._conflictedEvents = findConflictedEvents();
       const currentEventKey = getEventIdentifier(channel);
-      if (state._conflictedEvents.has(currentEventKey)) {
-        return false;
-      }
-
+      if (state._conflictedEvents.has(currentEventKey)) return false;
       if (!channel.time || channel.time === 'LIVE') return true;
-      
       const now = new Date();
       const currentHours = now.getHours();
       const currentMinutes = now.getMinutes();
       const currentTimeInMinutes = currentHours * 60 + currentMinutes;
-      
       const [eventHours, eventMinutes] = channel.time.split(':').map(Number);
       const adjustedEventHours = (eventHours + 1) % 24;
       const eventTimeInMinutes = adjustedEventHours * 60 + eventMinutes;
-      
       const duration = getEventDuration(channel);
       const margin = 15;
-      
       const startTime = eventTimeInMinutes - margin;
       const endTime = eventTimeInMinutes + duration + margin;
-      
       return currentTimeInMinutes >= startTime && currentTimeInMinutes <= endTime;
     }
 
@@ -1204,7 +1122,6 @@
           sport: channel.sport || ''
         };
       });
-
       Object.keys(currentChannelsMap).forEach(number => {
         if (!state.channelHistory[number]) {
           state.channelHistory[number] = {
@@ -1216,40 +1133,38 @@
         } else {
           const historyEntry = state.channelHistory[number];
           const currentName = currentChannelsMap[number].name;
-          
           if (historyEntry.names[0] !== currentName) {
             historyEntry.names.unshift(currentName);
             historyEntry.names = historyEntry.names.slice(0, 3);
           }
-          
           if (currentChannelsMap[number].event) historyEntry.event = currentChannelsMap[number].event;
           if (currentChannelsMap[number].sport) historyEntry.sport = currentChannelsMap[number].sport;
           historyEntry.lastUpdated = new Date().toISOString();
         }
       });
-
       localStorage.setItem('channelHistory', JSON.stringify(state.channelHistory));
     }
 
     function playChannel(channel) {
       state.currentChannel = channel;
-      
-      if (!state.channelHistory[channel.number] || 
-          state.channelHistory[channel.number].names[0] !== channel.name) {
+      if (!state.channelHistory[channel.number] || state.channelHistory[channel.number].names[0] !== channel.name) {
         syncChannelHistory();
       }
-      
       document.getElementById('playerContainer').classList.add('player-container--active');
-      document.getElementById('playerControls').classList.add('player-controls--active');      document.getElementById('channelInfo').textContent = state.customNames[channel.number] || channel.name;
+      document.getElementById('playerControls').classList.add('player-controls--active');
+      document.getElementById('channelInfo').textContent = state.customNames[channel.number] || channel.name;
       document.getElementById('channelNumberDisplay').textContent = `CH-${channel.number}`;
       document.getElementById('favoriteBtn').classList.toggle('control-btn--active', state.favorites.includes(channel.number));
-      
       const videoFrame = document.getElementById('videoFrame');
-      
       if (state.isOnline) {
-        videoFrame.src = `https://${state.baseDomain}/embed/stream-${channel.number}.php`;
+        // ACTUALIZACIÓN DE FUENTE: Yeahstreams
+        if (state.baseDomain.includes('yeahstreams')) {
+          videoFrame.src = `https://${state.baseDomain}/stream-${channel.number}.php`;
+        } else {
+          videoFrame.src = `https://${state.baseDomain}/embed/stream-${channel.number}.php`;
+        }
       }
-
+      // Manejo de zoom solo para dominios antiguos específicos
       if (state.baseDomain === 'watchit.my') {
         videoFrame.classList.add('zoomed-player');
       } else {
@@ -1260,7 +1175,6 @@
     function playChannelByNumber(number) {
       const channelNumber = String(number);
       const existingChannel = state.channels.find(c => c.number === channelNumber);
-      
       if (existingChannel) {
         playChannel(existingChannel);
       } else {
@@ -1301,13 +1215,13 @@
       if (state.stickyPlayer) {
         playerSection.classList.add('player-section--sticky');
         stickyBtn.innerHTML = '⛉';
-        stickyBtn.title = "Liberar reproductor";
       } else {
         playerSection.classList.remove('player-section--sticky');
         stickyBtn.innerHTML = '⛊';
-        stickyBtn.title = "Fijar reproductor";
       }
-    }    function showFavoriteModal() {
+    }
+
+    function showFavoriteModal() {
       if (!state.currentChannel) return;
       const savedName = state.customNames[state.currentChannel.number] || state.currentChannel.name;
       document.getElementById('favoriteNameInput').value = savedName;
@@ -1316,22 +1230,21 @@
 
     function hideFavoriteModal() {
       document.getElementById('favoriteModal').classList.remove('modal--active');
-    }    function saveFavorite() {
+    }
+
+    function saveFavorite() {
       if (!state.currentChannel) return;
       const channelNumber = state.currentChannel.number;
       const newName = document.getElementById('favoriteNameInput').value.trim();
-      
       if (newName) {
         state.customNames[channelNumber] = newName;
         localStorage.setItem('customNames', JSON.stringify(state.customNames));
       }
-
       if (!state.favorites.includes(channelNumber)) {
         state.favorites.push(channelNumber);
         localStorage.setItem('favorites', JSON.stringify(state.favorites));
         document.getElementById('favoriteBtn').classList.add('control-btn--active');
       }
-      
       hideFavoriteModal();
       renderResults();
     }
@@ -1348,11 +1261,7 @@
     function handleFavoriteClick() {
       if (!state.currentChannel) return;
       const isFavorite = state.favorites.includes(state.currentChannel.number);
-      if (isFavorite) {
-        removeFavorite();
-      } else {
-        showFavoriteModal();
-      }
+      if (isFavorite) removeFavorite(); else showFavoriteModal();
     }
 
     function applyFilter(filter) {
@@ -1405,10 +1314,7 @@
     function cleanEventName(eventText) {
       if (!eventText) return '';
       const match = eventText.match(/^(.+?)\s*:\s*(.+)$/);
-      if (match && match[2]) {
-        return match[2].trim();
-      }
-      return eventText.trim();
+      return match && match[2] ? match[2].trim() : eventText.trim();
     }
     
     function filterHistoryChannels() {
@@ -1426,96 +1332,53 @@
     }
 
     function filterChannels() {
-      if (state.currentFilter === 'history') {
-        return filterHistoryChannels();
-      }
-
+      if (state.currentFilter === 'history') return filterHistoryChannels();
       let filteredChannels = (state.isOnline ? state.channels : []).filter(channel => {
         if (state.currentFilter === 'favorites' && !state.favorites.includes(channel.number)) return false;
         if (state.currentFilter === 'live' && !isChannelLive(channel)) return false;
         if (state.searchTerm) {
           const term = state.searchTerm.toLowerCase();
           if (/^#?\d+$/.test(term)) {
-            const channelNumber = term.replace('#', '');
-            if (channel.number !== channelNumber) return false;
+            if (channel.number !== term.replace('#', '')) return false;
           } else {
             const translatedSport = translateSport(channel.sport).toLowerCase();
             const cleanedEvent = cleanEventName(channel.event).toLowerCase();
-            
-            if (!channel.name.toLowerCase().includes(term) && 
-                !cleanedEvent.includes(term) && 
-                !channel.sport.toLowerCase().includes(term) &&
-                !translatedSport.includes(term)) {
-              return false;
-            }
+            if (!channel.name.toLowerCase().includes(term) && !cleanedEvent.includes(term) && !translatedSport.includes(term)) return false;
           }
         }
         if (state.internationalFilter) {
-          const channelName = channel.name;
-          if (state.filteredKeywords.some(keyword => new RegExp(`(^|\\s|\\W)${keyword}(\\s|\\W|$)`, 'g').test(channelName))) return false;
+          if (state.filteredKeywords.some(keyword => new RegExp(`(^|\\s|\\W)${keyword}(\\s|\\W|$)`, 'g').test(channel.name))) return false;
         }
         if (state.activeEmojiFilters.length > 0) {
           const matchesFilter = state.activeEmojiFilters.some(filter => {
-            if (channel.sport.includes(filter) || channel.event.includes(filter)) {
-              return true;
-            }
-            
             const translatedSport = translateSport(channel.sport);
-            if (translatedSport.includes(filter)) {
-              return true;
-            }
-            
-            if (filter === "Fútbol") {
-              return /fútbol|futbol|football|soccer|All Soccer Events/i.test(channel.sport + channel.event);
-            }
-            if (filter === "Baloncesto") {
-              return /baloncesto|basketball|basket/i.test(channel.sport + channel.event);
-            }
-            if (filter === "Boxeo") {
-              return /boxeo|boxing|box/i.test(channel.sport + channel.event);
-            }
-            if (filter === "Tenis") {
-              return /tenis|tennis/i.test(channel.sport + channel.event);
-            }
-            if (filter === "Formula 1") {
-              return /formula 1|fórmula 1|f1|grand prix|gran premio/i.test(channel.sport + channel.event);
-            }
-            if (filter === "Spain ES Movistar M+") {
-              return /spain|españa|espana|es |movistar|m\+/i.test(channel.name);
-            }
-            
+            if (channel.sport.includes(filter) || channel.event.includes(filter) || translatedSport.includes(filter)) return true;
+            if (filter === "Fútbol") return /fútbol|futbol|football|soccer|All Soccer Events/i.test(channel.sport + channel.event);
+            if (filter === "Baloncesto") return /baloncesto|basketball|basket/i.test(channel.sport + channel.event);
+            if (filter === "Spain ES Movistar M+") return /spain|españa|espana|es |movistar|m\+/i.test(channel.name);
             return false;
           });
           if (!matchesFilter) return false;
         }
         return true;
       });
-
       filteredChannels.sort((a, b) => {
         const aIsFavorite = state.favorites.includes(a.number);
         const bIsFavorite = state.favorites.includes(b.number);
-        
         if (aIsFavorite && !bIsFavorite) return -1;
         if (!aIsFavorite && bIsFavorite) return 1;
-        
         if (state.currentFilter === 'live' || (state.sortByTime && state.currentFilter === 'all')) {
           if (a.time === 'LIVE' && b.time !== 'LIVE') return -1;
           if (a.time !== 'LIVE' && b.time === 'LIVE') return 1;
-          if (a.time === 'LIVE' && b.time === 'LIVE') return 0;
-          
           const timeA = a.time ? a.time.split(':').map(Number) : [23, 59];
           const timeB = b.time ? b.time.split(':').map(Number) : [23, 59];
-          
-          const adjustedHoursA = (timeA[0] + 18) % 24;
-          const adjustedHoursB = (timeB[0] + 18) % 24;
-          
-          if (adjustedHoursA !== adjustedHoursB) return adjustedHoursA - adjustedHoursB;
+          const adjA = (timeA[0] + 18) % 24;
+          const adjB = (timeB[0] + 18) % 24;
+          if (adjA !== adjB) return adjA - adjB;
           return timeA[1] - timeB[1];
         }
-        
         return 0;
       });
-
       return filteredChannels;
     }
 
@@ -1524,23 +1387,12 @@
       const filteredChannels = filterChannels();
       const resultsDiv = document.getElementById('results');
       document.getElementById('offlineMessage').style.display = state.isOnline ? 'none' : 'block';
-      
       if (filteredChannels.length === 0) {
-        resultsDiv.innerHTML = `
-          <div class="no-results">
-            <div class="no-results-icon">📡</div>
-            <div class="no-results-text">No se encontraron canales</div>
-            <div class="no-results-hint">Prueba con otros filtros o términos de búsqueda</div>
-          </div>
-        `;
+        resultsDiv.innerHTML = `<div class="no-results"><div class="no-results-icon">📡</div><div class="no-results-text">No se encontraron canales</div></div>`;
         return;
       }
-      
-      if (state.groupChannels && state.currentFilter !== 'history') {
-        renderGroupedResults(filteredChannels, resultsDiv);
-      } else {
-        renderUngroupedResults(filteredChannels, resultsDiv);
-      }
+      if (state.groupChannels && state.currentFilter !== 'history') renderGroupedResults(filteredChannels, resultsDiv);
+      else renderUngroupedResults(filteredChannels, resultsDiv);
     }
 
     function renderUngroupedResults(channels, container) {
@@ -1550,61 +1402,33 @@
     function renderGroupedResults(channels, container) {
       const groups = {};
       channels.forEach(channel => {
-        const cleanedEvent = cleanEventName(channel.event);
-        const groupKey = `${adjustTime(channel.time)}|${cleanedEvent}|${channel.sport}`;
+        const groupKey = `${adjustTime(channel.time)}|${cleanEventName(channel.event)}|${channel.sport}`;
         if (!groups[groupKey]) groups[groupKey] = [];
         groups[groupKey].push(channel);
       });
-      
       container.innerHTML = '';
-      
       Object.entries(groups).sort((a, b) => {
-        const timeA = a[0].split('|')[0];
-        const timeB = b[0].split('|')[0];
-        
+        const timeA = a[0].split('|')[0], timeB = b[0].split('|')[0];
         if (timeA === 'LIVE' && timeB !== 'LIVE') return -1;
         if (timeA !== 'LIVE' && timeB === 'LIVE') return 1;
-        if (timeA === 'LIVE' && timeB === 'LIVE') return 0;
-        
-        const timePartsA = timeA.split(':').map(Number);
-        const timePartsB = timeB.split(':').map(Number);
-        
-        if (timePartsA[0] !== timePartsB[0]) return timePartsA[0] - timePartsB[0];
-        return timePartsA[1] - timePartsB[1];
+        return timeA.localeCompare(timeB);
       }).forEach(([groupKey, groupChannels]) => {
         const [time, event, sport] = groupKey.split('|');
-        const firstChannel = groupChannels[0];
+        const first = groupChannels[0];
         const cleanedSport = sport.replace(/\(\d+\)/g, '').trim();
-
-        let sportEmoji = firstChannel.emoji;
-        const lowerCaseSport = sport.toLowerCase();
-        
-        if (/soccer|fútbol|futbol|foot/i.test(lowerCaseSport)) {
-            sportEmoji = '⚽';
-        } else if (/basketball|baloncesto|basket/i.test(lowerCaseSport)) {
-            sportEmoji = '🏀';
-        } else if (/boxing|boxeo|box/i.test(lowerCaseSport)) {
-            sportEmoji = '🥊';
-        } else if (/tennis|tenis/i.test(lowerCaseSport)) {
-            sportEmoji = '🎾';
-        } else if (/formula 1|f1/i.test(lowerCaseSport)) {
-            sportEmoji = '🏎️';
-        }
-        
+        let sportEmoji = first.emoji;
+        if (/soccer|fútbol|futbol/i.test(sport)) sportEmoji = '⚽';
+        else if (/basketball|baloncesto/i.test(sport)) sportEmoji = '🏀';
         const groupElement = document.createElement('div');
         groupElement.className = 'channel-group';
         groupElement.innerHTML = `
           <div class="channel-group__header">
-            <div class="channel-group__title">
-              ${sportEmoji ? `<span class="emoji-icon">${sportEmoji}</span>` : ''}
-              ${state.currentFilter !== 'history' ? `<span class="channel-time ${time === 'LIVE' ? 'channel-time--live' : ''}">${time}</span>` : `<span class="channel-time">${time}</span>`}
-              ${event} </div>
+            <div class="channel-group__title">${sportEmoji ? `<span class="emoji-icon">${sportEmoji}</span>` : ''} <span class="channel-time ${time === 'LIVE' ? 'channel-time--live' : ''}">${time}</span> ${event} </div>
             <div class="channel-group__sport">${translateSport(cleanedSport)}</div>
           </div>
           <div class="channel-group__content ${groupChannels.length === 1 ? 'channel-group__content--single' : ''}">
             ${groupChannels.map(channel => createChannelCard(channel)).join('')}
-          </div>
-        `;
+          </div>`;
         container.appendChild(groupElement);
       });
     }
@@ -1614,365 +1438,105 @@
       const isLive = isChannelLive(channel);
       const adjustedTime = adjustTime(channel.time);
       const cleanSport = channel.sport.replace(/\(\d+\)/g, '').trim();
-      
       const cleanedEvent = cleanEventName(channel.event);
-      
       const shouldShowEvent = !state.groupChannels || state.currentFilter === 'history';
-      const eventContent = cleanedEvent;      const nameContent = state.customNames[channel.number] || channel.name.trim();
-
-      let eventHtml = '';
-      
-      if (shouldShowEvent && eventContent) {
-          if (!nameContent.includes(eventContent)) {
-              eventHtml = `<div class="channel-event">${eventContent}</div>`;
-          }
-      }
-
+      const nameContent = state.customNames[channel.number] || channel.name.trim();
+      let eventHtml = (shouldShowEvent && cleanedEvent && !nameContent.includes(cleanedEvent)) ? `<div class="channel-event">${cleanedEvent}</div>` : '';
       return `
         <div class="channel-card ${isFavorite ? 'channel-card--favorite' : ''}" onclick="playChannel(${JSON.stringify(channel).replace(/"/g, '&quot;')})">
           <div class="channel-header">
             ${shouldShowEvent ? `<div class="channel-time">${adjustedTime}</div>` : ''}
-            <div class="channel-name ${isLive && state.currentFilter !== 'history' ? 'channel-name--live' : ''}">
-              ${nameContent}
-            </div>
+            <div class="channel-name ${isLive && state.currentFilter !== 'history' ? 'channel-name--live' : ''}">${nameContent}</div>
             <div class="channel-number">${channel.number}</div>
           </div>
           ${eventHtml}
           ${shouldShowEvent ? `<div class="channel-sport">${translateSport(cleanSport)}</div>` : ''}
-        </div>
-      `;
+        </div>`;
     }
 
-    function handleSearchInput() {
-      state.searchTerm = document.getElementById('searchInput').value.trim();
-      renderResults();
-    }
-
+    function handleSearchInput() { state.searchTerm = document.getElementById('searchInput').value.trim(); renderResults(); }
     function handleSearchEnter() {
-      const value = document.getElementById('searchInput').value.trim();
-      state.searchTerm = value;
-      
-      if (/^#?\d+$/.test(value)) {
-        const channelNumber = value.replace('#', '');
-        
-        if (state.currentFilter === 'history') {
-          if (state.channelHistory[channelNumber]) {
-            playChannel({
-              number: channelNumber,
-              name: state.channelHistory[channelNumber].names[0],
-              time: '',
-              event: '',
-              sport: ''
-            });
-          }
-          return;
-        }
-        
-        const channel = state.channels.find(c => c.number === channelNumber);
-        if (channel) {
-          playChannel(channel);
-        } else {
-          playChannelByNumber(channelNumber);
-        }
-        return;
-      }
-      
-      renderResults();
+      const val = document.getElementById('searchInput').value.trim();
+      if (/^#?\d+$/.test(val)) {
+        const num = val.replace('#', '');
+        const ch = state.channels.find(c => c.number === num);
+        if (ch) playChannel(ch); else playChannelByNumber(num);
+      } else renderResults();
     }
 
     async function scrape() {
       document.getElementById('loadingSpinner').style.display = 'inline-block';
       document.getElementById('fecha').textContent = 'Cargando...';
-      
-      if (state.channels.length > 0) {
-        renderResults();
-      }
-
+      if (state.channels.length > 0) renderResults();
       try {
-        if (!state.isOnline) {
-          document.getElementById('loadingSpinner').style.display = 'none';
-          renderResults();
-          return;
-        }
-        
+        if (!state.isOnline) { document.getElementById('loadingSpinner').style.display = 'none'; renderResults(); return; }
         const proxyUrl = "https://api.allorigins.win/raw?url=" + encodeURIComponent("https://daddylives.top/match-schedule/");
-        const response = await fetch(proxyUrl);
-        
-        if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
-        
-        const html = await response.text();
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, "text/html");
-        
-        const scheduleTitle = doc.querySelector("h1, .daddy-schedule-title, .entry-title");
-        let fechaExtraida = "";
-        
-        if (scheduleTitle) {
-          const titleText = scheduleTitle.textContent.split('–')[0].trim();
-          fechaExtraida = translateDate(titleText);
-        }
-        
-        if (fechaExtraida) {
-          document.getElementById('fecha').textContent = fechaExtraida;
-        } else {
-          document.getElementById('fecha').textContent = "Fecha no reconocida";
-        }
-        
+        const res = await fetch(proxyUrl);
+        if (!res.ok) throw new Error(`HTTP Error`);
+        const html = await res.text();
+        const doc = new DOMParser().parseFromString(html, "text/html");
+        const title = doc.querySelector("h1, .daddy-schedule-title");
+        if (title) document.getElementById('fecha').textContent = translateDate(title.textContent.split('–')[0].trim());
         const newChannels = [];
-        const matchCategories = doc.querySelectorAll(".match-category");
-
-        matchCategories.forEach(category => {
-          const emojiElement = category.querySelector(".emoji-icon");
-          const titleElement = category.querySelector(".category-title");
-          
-          if (!emojiElement || !titleElement) return;
-
-          const categorySport = titleElement.textContent.trim().replace(/\(\d+\)/, '').trim();
-          let categoryEmoji = emojiElement.textContent.trim();
-          
-          const lowerCaseSport = categorySport.toLowerCase();
-          
-          if (/soccer|fútbol|futbol|foot/i.test(lowerCaseSport)) {
-              categoryEmoji = '⚽'; 
-          } 
-          else if (/baseball|beisbol|mlb/i.test(lowerCaseSport)) {
-              categoryEmoji = '⚾'; 
-          } 
-          else if (/hockey|nhl/i.test(lowerCaseSport)) {
-              categoryEmoji = '🏒'; 
-          } 
-          else if (/wnba/i.test(lowerCaseSport)) {
-              categoryEmoji = '🏀'; 
-          }
-          
-          const matchSections = category.querySelectorAll(".match-section");
-
-          matchSections.forEach(section => {
-            const timeElement = section.querySelector(".time");
-            const matchNameElement = section.querySelector(".match-name");
-            const linksContainer = section.querySelector(".links");
-            
-            if (!timeElement || !matchNameElement || !linksContainer) return;
-            
-            const time = timeElement.textContent.split(' ')[0].trim();
-            const matchName = matchNameElement.textContent.trim();
-            const links = linksContainer.querySelectorAll(".link-button");
-            
-            if (links.length === 0) return;            links.forEach(link => {
-              const canalTexto = link.textContent.trim();
-              // Detectar formato "CH-123"
-              const canalMatch = canalTexto.match(/CH-(\d+)/i);
-              
-              if (canalMatch) {
-                const numero = canalMatch[1];
-                // Priorizar el nombre del link, si no, usar el nombre del evento como referencia
-                const nombreCanal = canalTexto;
-                
-                // Extraer URL del nuevo atributo data-watch-url o del href
-                let watchUrl = link.getAttribute('data-watch-url') || link.getAttribute('href') || '';
-                
-                if (numero) {
-                  newChannels.push({ 
-                    number: numero, 
-                    name: nombreCanal, 
-                    url: watchUrl.includes('http') ? watchUrl : `https://daddylives.top/embed/stream-${numero}.php`, 
-                    time: time, 
-                    event: matchName, 
-                    sport: categorySport,
-                    emoji: categoryEmoji
-                  });
-                }
-              }
+        doc.querySelectorAll(".match-category").forEach(cat => {
+          const sport = cat.querySelector(".category-title")?.textContent.trim().replace(/\(\d+\)/, '').trim();
+          cat.querySelectorAll(".match-section").forEach(sec => {
+            const time = sec.querySelector(".time")?.textContent.split(' ')[0].trim();
+            const match = sec.querySelector(".match-name")?.textContent.trim();
+            sec.querySelectorAll(".link-button").forEach(link => {
+              const m = link.textContent.trim().match(/CH-(\d+)/i);
+              if (m) newChannels.push({ number: m[1], name: link.textContent.trim(), time, event: match, sport });
             });
           });
         });
-
         if (newChannels.length > 0) {
           state.channels = newChannels;
           localStorage.setItem('channelsCache', JSON.stringify(newChannels));
           syncChannelHistory();
         }
-        
         renderResults();
-      } catch (err) {
-        console.error('Error al cargar datos:', err);
-        renderResults();
-      } finally {
-        document.getElementById('loadingSpinner').style.display = 'none';
-      }
-    }
-
-    function handleClearButtonClick(e) {
-      // Si la variable isLongPress es verdadera, significa que ya se ha abierto el modal
-      // y no queremos ejecutar la función de click normal (limpiar filtros).
-      if (e && e.detail === 0) return; // Esto previene el click simulado por touchstart/long press en algunos navegadores
-      if (window.isLongPressActive) {
-          window.isLongPressActive = false; // Reinicia la bandera
-          return; // Detiene la ejecución del click normal
-      }
-      clearEmojiFilters();
-    }
-
-    function handleOnlineStatusChange() {
-      state.isOnline = navigator.onLine;
-      state.isOnline ? scrape() : renderResults();
+      } catch (err) { console.error(err); renderResults(); } finally { document.getElementById('loadingSpinner').style.display = 'none'; }
     }
 
     function changePrimaryColor(color) {
       const rgb = hexToRgb(color);
-      const isDarkMode = document.body.classList.contains('dark-mode');
-      
-      document.documentElement.style.setProperty('--primary-rgb', `${rgb.r}, ${rgb.g}, ${rgb.b}`);
       document.documentElement.style.setProperty('--primary', color);
-      document.documentElement.style.setProperty('--primary-dark', shadeColor(color, -20));
-      document.documentElement.style.setProperty('--primary-light', 
-        isDarkMode ? `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.2)` : `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.1)`);
-      
-      document.querySelectorAll('.color-option').forEach(btn => {
-        btn.classList.remove('active');
-      });
-      document.querySelector(`.color-option[data-color="${color}"]`).classList.add('active');
       localStorage.setItem('primaryColor', color);
     }
 
     function hexToRgb(hex) {
-      const r = parseInt(hex.slice(1, 3), 16);
-      const g = parseInt(hex.slice(3, 5), 16);
-      const b = parseInt(hex.slice(5, 7), 16);
+      const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
       return { r, g, b };
-    }
-
-    function shadeColor(color, percent) {
-      let R = parseInt(color.substring(1,3), 16);
-      let G = parseInt(color.substring(3,5), 16);
-      let B = parseInt(color.substring(5,7), 16);
-
-      R = parseInt(R * (100 + percent) / 100);
-      G = parseInt(G * (100 + percent) / 100);
-      B = parseInt(B * (100 + percent) / 100);
-
-      R = (R<255)?R:255;  
-      G = (G<255)?G:255;  
-      B = (B<255)?B:255;  
-
-      return `#${R.toString(16).padStart(2,'0')}${G.toString(16).padStart(2,'0')}${B.toString(16).padStart(2,'0')}`;
     }
 
     document.addEventListener('DOMContentLoaded', () => {
       document.body.classList.toggle('dark-mode', state.darkMode);
-      
-      if (state.channels.length > 0 || Object.keys(state.channelHistory).length > 0) {
-        renderResults();
-      }
-      
+      if (state.channels.length > 0) renderResults();
       document.getElementById('filterAll').addEventListener('click', () => applyFilter('all'));
       document.getElementById('filterLive').addEventListener('click', () => applyFilter('live'));
       document.getElementById('filterFavorites').addEventListener('click', () => applyFilter('favorites'));
       document.getElementById('filterHistory').addEventListener('click', () => applyFilter('history'));
       
-      // ----------------------------------------------------------------------
-      // INICIO DEL MANEJO DE EVENTOS CORREGIDO (LONG PRESS)
-      // ----------------------------------------------------------------------
-      const clearFiltersBtn = document.getElementById('clearEmojiFilters');
-      let pressTimer;
-      const LONG_PRESS_DURATION = 700;
-      window.isLongPressActive = false; // Bandera global para el estado de long press
-
-      const openSettingsModal = () => {
-          window.isLongPressActive = true; // Establece la bandera cuando se ejecuta el long press
-          document.getElementById('settingsModal').classList.add('modal--active');
-          // No es necesario llamar a stopPressTimerAndExecuteClick, ya que el mousedown termina aquí.
-      }
-      
-      const startPressTimer = (e) => {
-          // Previene la repetición del evento de click si es un dispositivo táctil
-          if (e.type === 'touchstart') {
-             // Es importante agregar preventDefault() a touchstart para evitar el comportamiento de click después del touchend
-             e.preventDefault(); 
-          }
-          
-          // Solo si es el botón izquierdo del ratón o el primer toque
-          if (e.button !== 0 && e.type === 'mousedown') return; 
-          if (pressTimer) clearTimeout(pressTimer); // Limpiar por si acaso
-
-          pressTimer = setTimeout(openSettingsModal, LONG_PRESS_DURATION);
-      };
-
-      const stopPressTimer = (e) => {
-          if (pressTimer) {
-              clearTimeout(pressTimer);
-              pressTimer = null;
-          }
-      };
-
-      // Eventos de ratón
-      clearFiltersBtn.addEventListener('mousedown', startPressTimer);
-      clearFiltersBtn.addEventListener('mouseup', stopPressTimer);
-      clearFiltersBtn.addEventListener('mouseleave', stopPressTimer);
-      
-      // Eventos táctiles para dispositivos móviles
-      clearFiltersBtn.addEventListener('touchstart', startPressTimer);
-      clearFiltersBtn.addEventListener('touchend', stopPressTimer);
-      clearFiltersBtn.addEventListener('touchcancel', stopPressTimer);
-
-      // Evento Click: Se dispara *después* de mouseup o touchend.
-      // Aquí usamos la bandera `isLongPressActive` para bloquear la acción normal (limpiar filtros).
-      clearFiltersBtn.addEventListener('click', handleClearButtonClick);
-      
-      // ----------------------------------------------------------------------
-      // FIN DEL MANEJO DE EVENTOS CORREGIDO (LONG PRESS)
-      // ----------------------------------------------------------------------
+      const clearBtn = document.getElementById('clearEmojiFilters');
+      let timer;
+      clearBtn.addEventListener('mousedown', () => { timer = setTimeout(() => document.getElementById('settingsModal').classList.add('modal--active'), 700); });
+      clearBtn.addEventListener('mouseup', () => clearTimeout(timer));
+      clearBtn.addEventListener('click', (e) => { if (!window.isLongPressActive) clearEmojiFilters(); window.isLongPressActive = false; });
 
       document.querySelectorAll('.emoji-filter-btn').forEach(btn => btn.addEventListener('click', () => toggleEmojiFilter(btn.dataset.filter, btn)));
-      document.getElementById('searchInput').addEventListener('input', handleSearchInput);
-      document.getElementById('searchInput').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') handleSearchEnter();
-      });
-      document.getElementById('prevChannelBtn').addEventListener('click', () => navigateChannel('prev'));
-      document.getElementById('nextChannelBtn').addEventListener('click', () => navigateChannel('next'));
+      document.getElementById('searchInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') handleSearchEnter(); });
       document.getElementById('closePlayerBtn').addEventListener('click', closePlayer);
-      document.getElementById('toggleStickyBtn').addEventListener('click', toggleStickyPlayer);
       document.getElementById('favoriteBtn').addEventListener('click', handleFavoriteClick);
       document.getElementById('closeSettingsBtn').addEventListener('click', () => document.getElementById('settingsModal').classList.remove('modal--active'));
-      document.getElementById('saveFavoriteBtn').addEventListener('click', saveFavorite);
-      document.getElementById('cancelFavoriteBtn').addEventListener('click', hideFavoriteModal);
       document.getElementById('darkModeToggle').addEventListener('change', toggleDarkMode);
-      document.getElementById('darkModeToggle').checked = state.darkMode;
-      document.getElementById('internationalFilterToggle').addEventListener('change', toggleInternationalFilter);
-      document.getElementById('internationalFilterToggle').checked = state.internationalFilter;
-      document.getElementById('groupChannelsToggle').addEventListener('change', toggleGroupChannels);
-      document.getElementById('groupChannelsToggle').checked = state.groupChannels;
-      document.getElementById('sortByTimeToggle').addEventListener('change', toggleSortByTime);
-      document.getElementById('sortByTimeToggle').checked = state.sortByTime;
       
-      if (state.stickyPlayer) {
-        document.getElementById('playerSection').classList.add('player-section--sticky');
-        document.getElementById('toggleStickyBtn').innerHTML = '⛉';
-        document.getElementById('toggleStickyBtn').title = "Liberar reproductor";
-      } else {
-        document.getElementById('toggleStickyBtn').innerHTML = '⛊';
-        document.getElementById('toggleStickyBtn').title = "Fijar reproductor";
-      }
-      
-      document.querySelectorAll('.color-option').forEach(btn => {
-        btn.addEventListener('click', () => changePrimaryColor(btn.dataset.color));
-      });
-      
-      const savedColor = localStorage.getItem('primaryColor') || '#2563eb';
-      changePrimaryColor(savedColor);
-      
-      const baseDomainSelect = document.getElementById('baseDomainSelect');
-      baseDomainSelect.value = state.baseDomain;
-      baseDomainSelect.addEventListener('change', (e) => {
+      const domainSelect = document.getElementById('baseDomainSelect');
+      domainSelect.value = state.baseDomain;
+      domainSelect.addEventListener('change', (e) => {
         state.baseDomain = e.target.value;
         localStorage.setItem('baseDomain', state.baseDomain);
-        if (state.currentChannel) {
-          playChannel(state.currentChannel);
-        }
+        if (state.currentChannel) playChannel(state.currentChannel);
       });
-      
-      window.addEventListener('online', handleOnlineStatusChange);
-      window.addEventListener('offline', handleOnlineStatusChange);
       
       scrape();
     });
