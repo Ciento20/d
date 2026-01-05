@@ -338,6 +338,30 @@
   </div>
 
   <script>
+    // Diccionario de sustitución de nombres de canales
+    const channelNamesMap = {
+      "521": "#Vamos",
+      "524": "EuroSport 1",
+      "525": "EuroSport 2",
+      "526": "Movistar Deportes 3",
+      "527": "Movistar Deportes 4",
+      "528": "Movistar Golf",
+      "529": "Teledeporte",
+      "530": "GOL PLAY",
+      "532": "Telecinco",
+      "533": "TVELa1",
+      "535": "Cuatro",
+      "536": "TVELa2",
+      "537": "DAZNF1",
+      "539": "LALIGA TV Hypermotion",
+      "435": "Movistar Liga de Campeones",
+      "436": "Movistar Deportes 4",
+      "437": "Movistar Plus+",
+      "438": "Movistar Deportes 2",
+      "445": "DAZN 1",
+      "446": "DAZN 2"
+    };
+
     const state = {
       channels: JSON.parse(localStorage.getItem('channelsCache')) || [],
       currentFilter: 'all',
@@ -354,6 +378,15 @@
     };
 
     // Funciones de utilidad
+    function getDisplayName(channel) {
+      // 1. Prioridad: Nombre manual guardado por el usuario
+      if (state.customNames[channel.number]) return state.customNames[channel.number];
+      // 2. Prioridad: Mapeo automático por número de canal definido arriba
+      if (channelNamesMap[channel.number]) return channelNamesMap[channel.number];
+      // 3. Fallback: Nombre original del scraper
+      return channel.name;
+    }
+
     function adjustTime(time) {
       if (!time || time === 'LIVE') return time;
       const [h, m] = time.split(':').map(Number);
@@ -374,7 +407,7 @@
       state.currentChannel = channel;
       document.getElementById('playerContainer').classList.add('player-container--active');
       document.getElementById('playerControls').classList.add('player-controls--active');
-      document.getElementById('channelInfo').textContent = state.customNames[channel.number] || channel.name;
+      document.getElementById('channelInfo').textContent = getDisplayName(channel);
       
       const frame = document.getElementById('videoFrame');
       frame.src = state.baseDomain.includes('php?id=') ? 
@@ -395,9 +428,10 @@
     function renderResults() {
       const resultsDiv = document.getElementById('results');
       const filtered = state.channels.filter(c => {
+        const displayName = getDisplayName(c).toLowerCase();
         if (state.currentFilter === 'favorites' && !state.favorites.includes(c.number)) return false;
         if (state.currentFilter === 'live' && !isChannelLive(c)) return false;
-        if (state.searchTerm && !c.name.toLowerCase().includes(state.searchTerm.toLowerCase()) && !c.event.toLowerCase().includes(state.searchTerm.toLowerCase())) return false;
+        if (state.searchTerm && !displayName.includes(state.searchTerm.toLowerCase()) && !c.event.toLowerCase().includes(state.searchTerm.toLowerCase())) return false;
         if (state.internationalFilter && state.filteredKeywords.some(k => c.name.includes(k))) return false;
         if (state.activeEmojiFilters.length > 0 && !state.activeEmojiFilters.some(f => c.sport.includes(f) || c.event.includes(f))) return false;
         return true;
@@ -426,7 +460,7 @@
                 ${channels.map(c => `
                   <div class="channel-card" onclick='playChannel(${JSON.stringify(c)})'>
                     <div class="channel-number">CH ${c.number}</div>
-                    <div class="channel-name">${state.customNames[c.number] || c.name}</div>
+                    <div class="channel-name">${getDisplayName(c)}</div>
                     <div class="channel-time">${isChannelLive(c) ? 'EN DIRECTO' : 'PRÓXIMAMENTE'}</div>
                   </div>
                 `).join('')}
@@ -443,7 +477,8 @@
         const html = await response.text();
         const doc = new DOMParser().parseFromString(html, "text/html");
         
-        document.getElementById('fecha').textContent = doc.querySelector("h1")?.textContent.split('–')[0] || "Programación";
+        const h1Text = doc.querySelector("h1")?.textContent || "";
+        document.getElementById('fecha').textContent = h1Text.split('–')[0] || "Programación";
 
         const found = [];
         doc.querySelectorAll(".match-category").forEach(cat => {
