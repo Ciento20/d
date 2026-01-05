@@ -379,11 +379,8 @@
 
     // Funciones de utilidad
     function getDisplayName(channel) {
-      // 1. Prioridad: Nombre manual guardado por el usuario
       if (state.customNames[channel.number]) return state.customNames[channel.number];
-      // 2. Prioridad: Mapeo automático por número de canal definido arriba
       if (channelNamesMap[channel.number]) return channelNamesMap[channel.number];
-      // 3. Fallback: Nombre original del scraper
       return channel.name;
     }
 
@@ -477,8 +474,14 @@
         const html = await response.text();
         const doc = new DOMParser().parseFromString(html, "text/html");
         
-        const h1Text = doc.querySelector("h1")?.textContent || "";
-        document.getElementById('fecha').textContent = h1Text.split('–')[0] || "Programación";
+        // CORRECCIÓN DE LA FECHA
+        const fechaElemento = doc.querySelector(".daddy-schedule-title");
+        if (fechaElemento) {
+          const textoFecha = fechaElemento.textContent.split('–')[0].trim();
+          document.getElementById('fecha').textContent = textoFecha;
+        } else {
+          document.getElementById('fecha').textContent = "Programación de Hoy";
+        }
 
         const found = [];
         doc.querySelectorAll(".match-category").forEach(cat => {
@@ -498,16 +501,15 @@
           localStorage.setItem('channelsCache', JSON.stringify(found));
           renderResults();
         }
-      } catch (e) { console.error("Error scrape:", e); }
+      } catch (e) { 
+        console.error("Error scrape:", e); 
+        document.getElementById('fecha').textContent = "Error al cargar la programación";
+      }
     }
 
-    // EVENTOS DE AJUSTES (LONG PRESS)
     let pressTimer;
     const settingsBtn = document.getElementById('clearEmojiFilters');
-
-    const showSettings = () => {
-      document.getElementById('settingsModal').classList.add('modal--active');
-    };
+    const showSettings = () => { document.getElementById('settingsModal').classList.add('modal--active'); };
 
     settingsBtn.addEventListener('mousedown', () => pressTimer = setTimeout(showSettings, 800));
     settingsBtn.addEventListener('mouseup', () => clearTimeout(pressTimer));
@@ -519,7 +521,6 @@
       renderResults();
     });
 
-    // VINCULACIÓN DE AJUSTES
     document.getElementById('darkModeToggle').checked = state.darkMode;
     document.getElementById('darkModeToggle').onchange = (e) => {
       state.darkMode = e.target.checked;
@@ -547,7 +548,6 @@
       localStorage.setItem('baseDomain', state.baseDomain);
     };
 
-    // BOTONES MODAL
     document.getElementById('closeSettingsBtn').onclick = () => document.getElementById('settingsModal').classList.remove('modal--active');
     document.getElementById('closePlayerBtn').onclick = () => {
       document.getElementById('playerContainer').classList.remove('player-container--active');
@@ -555,7 +555,6 @@
       document.getElementById('videoFrame').src = '';
     };
 
-    // FILTROS
     document.getElementById('filterAll').onclick = () => applyFilter('all');
     document.getElementById('filterLive').onclick = () => applyFilter('live');
     document.getElementById('filterFavorites').onclick = () => applyFilter('favorites');
@@ -576,7 +575,6 @@
       renderResults();
     };
 
-    // INICIO
     if(state.darkMode) document.body.classList.add('dark-mode');
     scrape();
     renderResults();
