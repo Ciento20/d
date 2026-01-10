@@ -256,6 +256,7 @@
 
     @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
 
+    /* AJUSTES PARA MÓVIL (BARRA HORIZONTAL) */
     @media (max-width: 768px) {
       .sidebar {
         width: 100%; height: 65px; bottom: 0; top: auto;
@@ -263,9 +264,28 @@
         padding: 0;
       }
       .sidebar:hover { width: 100%; }
-      .nav-group { flex-direction: row; justify-content: space-around; padding: 0; }
+      
+      .nav-group { 
+        flex-direction: row; 
+        justify-content: space-around; 
+        padding: 0; 
+        height: 100%;
+        gap: 0;
+      }
+
+      .filter-button {
+        justify-content: center; /* Centra el emoji horizontalmente */
+        padding: 0;
+        height: 100%;
+        font-size: 1.4rem; /* Aumenta un poco el tamaño del emoji */
+        gap: 0;
+      }
+
       .main-content { margin-left: 0; margin-bottom: 80px; padding: 1rem; }
-      .sidebar span { display: none; }
+      
+      /* Ocultar el texto de los botones en móvil para centrar solo el emoji */
+      .sidebar span { display: none !important; }
+      
       #emojiFilters { display: none; }
       .search-container { max-width: 100%; }
     }
@@ -639,19 +659,13 @@
       };
     });
 
-    // MEJORA: Reproducción directa por número
     document.getElementById('searchInput').oninput = (e) => {
       const val = e.target.value.trim();
       state.searchTerm = val;
-      
-      // Si es un número, buscamos coincidencia exacta en los canales actuales
       if (/^\d+$/.test(val)) {
         const exactMatch = state.channels.find(c => c.number === val);
-        if (exactMatch) {
-          playChannel(exactMatch);
-        }
+        if (exactMatch) playChannel(exactMatch);
       }
-      
       renderResults();
     };
 
