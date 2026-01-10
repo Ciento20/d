@@ -809,8 +809,17 @@
               const time = sec.querySelector(".time")?.textContent.trim();
               const event = sec.querySelector(".match-name")?.textContent.trim();
               sec.querySelectorAll(".link-button").forEach(link => {
-                const match = link.textContent.trim().match(/CH-(\d+)/i);
-                if (match) found.push({ number: match[1], name: link.textContent.trim(), time, event, sport });
+                const linkText = link.textContent.trim();
+                
+                // NUEVO FILTRO DE CANALES FALSOS (CH-4K y CH-HD)
+                if (linkText.toUpperCase() === "CH-4K" || linkText.toUpperCase() === "CH-HD") {
+                  return; // Salta este elemento
+                }
+
+                const match = linkText.match(/CH-(\d+)/i);
+                if (match) {
+                  found.push({ number: match[1], name: linkText, time, event, sport });
+                }
               });
             });
           });
