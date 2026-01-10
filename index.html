@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=0.68, maximum-scale=1.0, user-scalable=no">
-  <title>Smart TV Stream</title>
+  <title>Smart TV Stream - Auto Play</title>
   <style>
     :root {
       --primary: #2563eb;
@@ -126,7 +126,7 @@
     .filter-button:hover { background: var(--primary-light); color: var(--text); }
     .filter-button--active { background: var(--primary) !important; color: white !important; }
 
-    /* BUSCADOR Y BOTÓN LIMPIAR */
+    /* BUSCADOR */
     .search-container {
       display: flex;
       align-items: center;
@@ -213,7 +213,7 @@
       animation: pulse 1.5s infinite;
     }
 
-    /* MODALES AJUSTES */
+    /* MODALES */
     .modal {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -256,7 +256,6 @@
 
     @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
 
-    /* AJUSTES PARA MÓVIL (BARRA HORIZONTAL) */
     @media (max-width: 768px) {
       .sidebar {
         width: 100%; height: 65px; bottom: 0; top: auto;
@@ -264,25 +263,9 @@
         padding: 0;
       }
       .sidebar:hover { width: 100%; }
-      
-      .nav-group { 
-        flex-direction: row; 
-        justify-content: space-around; 
-        padding: 0; 
-        height: 100%;
-        gap: 0;
-      }
-
-      .filter-button {
-        justify-content: center;
-        padding: 0;
-        height: 100%;
-        font-size: 1.4rem;
-        gap: 0;
-      }
-
+      .nav-group { flex-direction: row; justify-content: space-around; padding: 0; height: 100%; gap: 0; }
+      .filter-button { justify-content: center; padding: 0; height: 100%; font-size: 1.4rem; gap: 0; }
       .main-content { margin-left: 0; margin-bottom: 80px; padding: 1rem; }
-      
       .sidebar span { display: none !important; }
       .search-container { max-width: 100%; }
     }
@@ -304,7 +287,7 @@
     <main class="main-content">
       <div class="search-container">
         <div class="search-box">
-          <input type="text" id="searchInput" placeholder="Buscar canal, evento o #número...">
+          <input type="text" id="searchInput" placeholder="Escribe un número para ir directo...">
         </div>
         <button class="clear-filters-btn" id="clearFiltersBtn" title="Limpiar todos los filtros">x</button>
       </div>
@@ -323,7 +306,7 @@
       </div>
 
       <div id="fechaContainer">
-        <h2 id="fecha">Cargando...</h2>
+        <h2 id="fecha">Cargando canales...</h2>
       </div>
 
       <div id="results"></div>
@@ -387,7 +370,8 @@
       internationalFilter: localStorage.getItem('internationalFilter') === 'true',
       groupChannels: localStorage.getItem('groupChannels') !== 'false',
       darkMode: localStorage.getItem('darkMode') !== 'false',
-      filteredKeywords: ["Cricket", "Russia", "Golf", "PL", "NZ", "BR", "Morocco", "Malaysia", "Arabic"]
+      filteredKeywords: ["Cricket", "Russia", "Golf", "PL", "NZ", "BR", "Morocco", "Malaysia", "Arabic"],
+      searchTimeout: null // Para el auto-play
     };
 
     async function syncAutoNames() {
@@ -396,23 +380,20 @@
         const html = await response.text();
         const doc = new DOMParser().parseFromString(html, "text/html");
         const map = {};
-        
         doc.querySelectorAll(".gi").forEach(el => {
           const name = el.querySelector(".text")?.textContent.trim();
           const num = el.querySelector(".num")?.textContent.trim();
           if (num && name) map[num] = name;
         });
-
         state.autoNamesMap = map;
         localStorage.setItem('autoNamesMap', JSON.stringify(map));
         renderResults();
-      } catch (e) {
-        console.error("Error sincronizando nombres");
-      }
+      } catch (e) { console.error("Error sincronizando nombres"); }
     }
 
     function getDisplayName(channel) {
-      return state.customNames[channel.number] || state.autoNamesMap[channel.number] || channel.name;
+      if (!channel) return "Desconocido";
+      return state.customNames[channel.number] || state.autoNamesMap[channel.number] || channel.name || `Canal ${channel.number}`;
     }
 
     function adjustTime(time) {
@@ -423,10 +404,10 @@
 
     function isChannelLive(channel) {
       if (channel.time === 'LIVE') return true;
+      if (!channel.time) return false;
       const now = new Date();
       const current = now.getHours() * 60 + now.getMinutes();
       const adjusted = adjustTime(channel.time);
-      if(!adjusted) return false;
       const [h, m] = adjusted.split(':').map(Number);
       const start = h * 60 + m;
       return current >= start - 15 && current <= start + 120;
@@ -443,9 +424,11 @@
       favBtn.style.color = state.favorites.includes(channel.number) ? '#fbbf24' : 'var(--text-dim)';
 
       const frame = document.getElementById('videoFrame');
-      frame.src = state.baseDomain.includes('php?id=') ? 
+      const streamUrl = state.baseDomain.includes('php?id=') ? 
         `https://${state.baseDomain}${channel.number}` : 
         `https://${state.baseDomain}stream-${channel.number}.php`;
+      
+      frame.src = streamUrl;
       window.scrollTo({top: 0, behavior: 'smooth'});
     }
 
@@ -454,12 +437,9 @@
       const eventChannels = state.channels.filter(c => c.event === state.currentChannel.event);
       if (eventChannels.length <= 1) return;
       const currentIndex = eventChannels.findIndex(c => c.number === state.currentChannel.number);
-      let nextIndex;
-      if (direction === 'next') {
-        nextIndex = (currentIndex + 1) % eventChannels.length;
-      } else {
-        nextIndex = (currentIndex - 1 + eventChannels.length) % eventChannels.length;
-      }
+      let nextIndex = direction === 'next' ? 
+        (currentIndex + 1) % eventChannels.length : 
+        (currentIndex - 1 + eventChannels.length) % eventChannels.length;
       playChannel(eventChannels[nextIndex]);
     }
 
@@ -529,8 +509,6 @@
       state.searchTerm = '';
       state.currentFilter = 'all';
       document.getElementById('searchInput').value = '';
-      document.querySelectorAll('.filter-button').forEach(b => b.classList.remove('filter-button--active'));
-      document.getElementById('filterAll').classList.add('filter-button--active');
       renderResults();
     }
 
@@ -540,8 +518,7 @@
       let translated = text;
       Object.keys(dayMap).forEach(en => translated = translated.replace(new RegExp(en, 'g'), dayMap[en]));
       Object.keys(monthMap).forEach(en => translated = translated.replace(new RegExp(en, 'g'), monthMap[en]));
-      translated = translated.replace('Schedule for', 'Programación para');
-      return translated;
+      return translated.replace('Schedule for', 'Programación para');
     }
 
     async function scrape() {
@@ -558,11 +535,7 @@
 
         const found = [];
         doc.querySelectorAll(".match-category").forEach(cat => {
-          let sport = cat.querySelector(".category-title")?.textContent.trim();
-          if (sport) {
-            sport = sport.replace(/\s*\(\d+\)/g, ''); 
-          }
-
+          let sport = cat.querySelector(".category-title")?.textContent.trim().replace(/\s*\(\d+\)/g, '');
           cat.querySelectorAll(".match-section").forEach(sec => {
             const time = sec.querySelector(".time")?.textContent.trim();
             const event = sec.querySelector(".match-name")?.textContent.trim();
@@ -570,11 +543,7 @@
               const textContent = link.textContent.trim();
               if (textContent.includes("-HD") || textContent.includes("-4K")) return;
               const match = textContent.match(/CH-(\d+)/i);
-              const num = match ? match[1] : null;
-
-              if (num) {
-                found.push({ number: num, name: textContent, time, event, sport });
-              }
+              if (match) found.push({ number: match[1], name: textContent, time, event, sport });
             });
           });
         });
@@ -584,10 +553,39 @@
           localStorage.setItem('channelsCache', JSON.stringify(found));
           renderResults();
         }
-      } catch (e) { document.getElementById('fecha').textContent = "Error al cargar"; }
+      } catch (e) { document.getElementById('fecha').textContent = "Error al conectar con la fuente"; }
     }
 
-    // Inicializar eventos
+    // --- LÓGICA DE EVENTOS ---
+    document.getElementById('searchInput').oninput = (e) => {
+      const val = e.target.value.trim();
+      state.searchTerm = val;
+      renderResults();
+
+      // Cancelar carga anterior si el usuario sigue escribiendo
+      clearTimeout(state.searchTimeout);
+
+      // Si es un número puro, intentar reproducir tras 800ms de inactividad
+      if (/^\d+$/.test(val)) {
+        state.searchTimeout = setTimeout(() => {
+          // Buscamos si ya existe en la lista de canales scrapeados
+          let targetChannel = state.channels.find(c => c.number === val);
+          
+          // Si no existe, creamos un canal genérico al vuelo
+          if (!targetChannel) {
+            targetChannel = { 
+              number: val, 
+              name: state.autoNamesMap[val] || `Canal ${val}`, 
+              event: 'Canal directo', 
+              sport: 'TV', 
+              time: '' 
+            };
+          }
+          playChannel(targetChannel);
+        }, 800);
+      }
+    };
+
     document.getElementById('syncAutoNamesBtn').onclick = syncAutoNames;
     document.getElementById('nextChannelBtn').onclick = () => navigateEventChannel('next');
     document.getElementById('prevChannelBtn').onclick = () => navigateEventChannel('prev');
@@ -636,16 +634,6 @@
     document.getElementById('filterLive').onclick = () => applyFilter('live');
     document.getElementById('filterFavorites').onclick = () => applyFilter('favorites');
     document.getElementById('filterHistory').onclick = () => applyFilter('history');
-
-    document.getElementById('searchInput').oninput = (e) => {
-      const val = e.target.value.trim();
-      state.searchTerm = val;
-      if (/^\d+$/.test(val)) {
-        const exactMatch = state.channels.find(c => c.number === val);
-        if (exactMatch) playChannel(exactMatch);
-      }
-      renderResults();
-    };
 
     if(state.darkMode) document.body.classList.add('dark-mode');
     if (Object.keys(state.autoNamesMap).length === 0) syncAutoNames();
