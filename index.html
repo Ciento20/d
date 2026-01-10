@@ -469,7 +469,7 @@
         const displayName = getDisplayName(c).toLowerCase();
         if (state.currentFilter === 'favorites' && !state.favorites.includes(c.number)) return false;
         if (state.currentFilter === 'live' && !isChannelLive(c)) return false;
-        if (state.searchTerm && !displayName.includes(state.searchTerm.toLowerCase()) && !c.event.toLowerCase().includes(state.searchTerm.toLowerCase())) return false;
+        if (state.searchTerm && !displayName.includes(state.searchTerm.toLowerCase()) && !c.event.toLowerCase().includes(state.searchTerm.toLowerCase()) && c.number !== state.searchTerm) return false;
         if (state.internationalFilter && state.filteredKeywords.some(k => c.name.includes(k))) return false;
         if (state.activeEmojiFilters.length > 0 && !state.activeEmojiFilters.some(f => c.sport.includes(f) || c.event.includes(f))) return false;
         return true;
@@ -560,7 +560,6 @@
             sec.querySelectorAll(".link-button").forEach(link => {
               const textContent = link.textContent.trim();
               
-              // IGNORAR CANALES FALSOS (HD, 4K sin número)
               if (textContent.includes("-HD") || textContent.includes("-4K")) return;
 
               const match = textContent.match(/CH-(\d+)/i);
@@ -639,8 +638,20 @@
         renderResults();
       };
     });
+
+    // MEJORA: Reproducción directa por número
     document.getElementById('searchInput').oninput = (e) => {
-      state.searchTerm = e.target.value;
+      const val = e.target.value.trim();
+      state.searchTerm = val;
+      
+      // Si es un número, buscamos coincidencia exacta en los canales actuales
+      if (/^\d+$/.test(val)) {
+        const exactMatch = state.channels.find(c => c.number === val);
+        if (exactMatch) {
+          playChannel(exactMatch);
+        }
+      }
+      
       renderResults();
     };
 
