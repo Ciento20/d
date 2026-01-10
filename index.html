@@ -381,7 +381,6 @@
       filteredKeywords: ["Cricket", "Russia", "Golf", "PL", "NZ", "BR", "Morocco", "Malaysia", "Arabic"]
     };
 
-    // Función para cotejar los nombres con la web 24/7
     async function syncAutoNames() {
       try {
         const response = await fetch("https://api.allorigins.win/raw?url=" + encodeURIComponent("https://daddylives.top/24-7-channels/"));
@@ -398,14 +397,13 @@
         state.autoNamesMap = map;
         localStorage.setItem('autoNamesMap', JSON.stringify(map));
         renderResults();
-        alert("Nombres sincronizados correctamente");
+        console.log("Nombres sincronizados correctamente");
       } catch (e) {
         console.error("Error sincronizando nombres");
       }
     }
 
     function getDisplayName(channel) {
-      // Prioridad: Nombre manual > Nombre sincronizado 24/7 > Nombre del schedule
       return state.customNames[channel.number] || state.autoNamesMap[channel.number] || channel.name;
     }
 
@@ -560,8 +558,17 @@
             const time = sec.querySelector(".time")?.textContent.trim();
             const event = sec.querySelector(".match-name")?.textContent.trim();
             sec.querySelectorAll(".link-button").forEach(link => {
-              const num = link.textContent.match(/CH-(\d+)/i)?.[1];
-              if (num) found.push({ number: num, name: link.textContent.trim(), time, event, sport });
+              const textContent = link.textContent.trim();
+              
+              // IGNORAR CANALES FALSOS (HD, 4K sin número)
+              if (textContent.includes("-HD") || textContent.includes("-4K")) return;
+
+              const match = textContent.match(/CH-(\d+)/i);
+              const num = match ? match[1] : null;
+
+              if (num) {
+                found.push({ number: num, name: textContent, time, event, sport });
+              }
             });
           });
         });
@@ -574,7 +581,7 @@
       } catch (e) { document.getElementById('fecha').textContent = "Error al cargar"; }
     }
 
-    // Inicializar eventos y cargar
+    // Inicializar eventos
     document.getElementById('syncAutoNamesBtn').onclick = syncAutoNames;
     document.getElementById('nextChannelBtn').onclick = () => navigateEventChannel('next');
     document.getElementById('prevChannelBtn').onclick = () => navigateEventChannel('prev');
@@ -638,11 +645,7 @@
     };
 
     if(state.darkMode) document.body.classList.add('dark-mode');
-    
-    // Al cargar la web sincronizamos nombres automáticamente si no hay
-    if (Object.keys(state.autoNamesMap).length === 0) {
-      syncAutoNames();
-    }
+    if (Object.keys(state.autoNamesMap).length === 0) syncAutoNames();
     scrape();
   </script>
 </body>
