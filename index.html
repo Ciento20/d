@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=0.68, maximum-scale=1.0, user-scalable=no">
-  <title>Smart TV Stream - Auto Play</title>
+  <title>Smart TV Stream - Pro Player</title>
   <style>
     :root {
       --primary: #2563eb;
@@ -36,10 +36,63 @@
       transition: background 0.3s;
     }
 
+    /* LOADER PROFESIONAL */
+    #loader-container {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: var(--bg-dark);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      transition: opacity 0.5s ease, visibility 0.5s;
+    }
+
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 5px solid var(--primary-light);
+      border-top: 5px solid var(--primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 20px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .loader-text {
+      color: var(--text);
+      font-weight: 500;
+      letter-spacing: 1px;
+      animation: pulse-text 1.5s infinite;
+    }
+
+    @keyframes pulse-text {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    /* CONTENEDOR PRINCIPAL */
     .app-container {
       display: flex;
       flex-direction: row;
       min-height: 100vh;
+      opacity: 0; /* Empieza invisible para el fade-in */
+      transition: opacity 0.5s ease;
+    }
+
+    .app-ready .app-container {
+      opacity: 1;
+    }
+
+    .app-ready #loader-container {
+      opacity: 0;
+      visibility: hidden;
     }
 
     /* BARRA LATERAL */
@@ -64,6 +117,42 @@
       margin-left: 80px;
       padding: 1rem 2rem;
       width: calc(100% - 80px);
+    }
+
+    /* FILTROS DINÁMICOS */
+    .dynamic-filters {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      padding: 10px 0 20px 0;
+      scrollbar-width: none;
+    }
+    .dynamic-filters::-webkit-scrollbar { display: none; }
+
+    .filter-chip {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      color: var(--text);
+      padding: 8px 16px;
+      border-radius: 20px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .filter-chip:hover {
+      border-color: var(--primary);
+      background: var(--primary-light);
+    }
+
+    .filter-chip--active {
+      background: var(--primary) !important;
+      color: white;
+      border-color: var(--primary);
     }
 
     /* REPRODUCTOR */
@@ -131,7 +220,7 @@
       display: flex;
       align-items: center;
       gap: 12px;
-      margin-bottom: 2rem;
+      margin-bottom: 1rem;
       max-width: 560px;
     }
 
@@ -176,7 +265,7 @@
     .channel-group { margin-bottom: 2.5rem; }
     .channel-group__header { margin-bottom: 1rem; padding-left: 0.5rem; }
     .channel-group__title { font-size: 1.2rem; font-weight: bold; display: flex; align-items: center; gap: 10px; }
-    .channel-group__sport { color: var(--primary); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; }
+    .channel-group__sport { color: var(--primary); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
 
     .channel-group__content {
       display: flex;
@@ -273,6 +362,11 @@
 </head>
 <body>
 
+  <div id="loader-container">
+    <div class="spinner"></div>
+    <div class="loader-text">Sincronizando canales...</div>
+  </div>
+
   <div class="app-container">
     <nav class="sidebar">
       <div class="nav-group">
@@ -292,6 +386,8 @@
         <button class="clear-filters-btn" id="clearFiltersBtn" title="Limpiar todos los filtros">x</button>
       </div>
 
+      <div class="dynamic-filters" id="dynamicFilters"></div>
+
       <div class="player-section">
         <div class="player-container" id="playerContainer">
           <iframe id="videoFrame" allowfullscreen></iframe>
@@ -306,7 +402,7 @@
       </div>
 
       <div id="fechaContainer">
-        <h2 id="fecha">Cargando canales...</h2>
+        <h2 id="fecha">Actualizando programación...</h2>
       </div>
 
       <div id="results"></div>
@@ -364,6 +460,7 @@
       autoNamesMap: JSON.parse(localStorage.getItem('autoNamesMap')) || {},
       currentChannel: null,
       currentFilter: 'all',
+      sportFilter: null,
       searchTerm: '',
       favorites: JSON.parse(localStorage.getItem('favorites')) || [],
       customNames: JSON.parse(localStorage.getItem('customNames')) || {},
@@ -371,13 +468,20 @@
       internationalFilter: localStorage.getItem('internationalFilter') === 'true',
       groupChannels: localStorage.getItem('groupChannels') !== 'false',
       darkMode: localStorage.getItem('darkMode') !== 'false',
-      // Lista de Keywords actualizada para el filtro internacional
       filteredKeywords: [
         "Cricket", "Russia", "Golf", "PL", "NZ", "BR", "Morocco", "Malaysia", "Arabic", "Astro", "Willow", "SuperSport", "Star Sports", "Sony Ten",
         "France", "Turkiye", "Turkey", "Portugal", "Serbia", "MENA", "DE", "Croatia", "Brasil", "Israel", "Italy", "Poland", "NL"
       ],
-      searchTimeout: null
+      searchTimeout: null,
+      sportEmojis: {
+        "TV SHOWS": "📺", "SOCCER": "⚽", "CRICKET": "🏏", "TENNIS": "🎾", "MOTORSPORT": "🏁",
+        "BADMINTON": "🏸", "MMA": "👊", "AM. FOOTBALL": "🏈", "NBA": "⛹️", "VOLLEYBALL": "🏐"
+      }
     };
+
+    function setAppReady() {
+      document.body.classList.add('app-ready');
+    }
 
     function hashCode(str) {
       let hash = 0;
@@ -409,6 +513,24 @@
     function getDisplayName(channel) {
       if (!channel) return "Desconocido";
       return state.customNames[channel.number] || state.autoNamesMap[channel.number] || channel.name || `Canal ${channel.number}`;
+    }
+
+    function getSportWithEmoji(sportName) {
+      if (!sportName) return "📺 TV";
+      const upperSport = sportName.toUpperCase();
+      for (const [key, emoji] of Object.entries(state.sportEmojis)) {
+        if (upperSport.includes(key)) return `${sportName} ${emoji}`;
+      }
+      return sportName;
+    }
+
+    function getEmojiOnly(sportName) {
+      if (!sportName) return "📺";
+      const upperSport = sportName.toUpperCase();
+      for (const [key, emoji] of Object.entries(state.sportEmojis)) {
+        if (upperSport.includes(key)) return emoji;
+      }
+      return "🏆";
     }
 
     function adjustTime(time) {
@@ -449,37 +571,75 @@
 
     function navigateEventChannel(direction) {
       if (!state.currentChannel) return;
-      const eventChannels = state.channels.filter(c => c.event === state.currentChannel.event);
-      if (eventChannels.length <= 1) return;
-      const currentIndex = eventChannels.findIndex(c => c.number === state.currentChannel.number);
-      let nextIndex = direction === 'next' ? 
-        (currentIndex + 1) % eventChannels.length : 
-        (currentIndex - 1 + eventChannels.length) % eventChannels.length;
-      playChannel(eventChannels[nextIndex]);
+      const eventChannels = state.channels.filter(c => 
+        state.currentChannel.event && c.event === state.currentChannel.event
+      );
+
+      if (eventChannels.length > 1) {
+        const currentIndex = eventChannels.findIndex(c => c.number === state.currentChannel.number);
+        let nextIndex = direction === 'next' ? 
+          (currentIndex + 1) % eventChannels.length : 
+          (currentIndex - 1 + eventChannels.length) % eventChannels.length;
+        playChannel(eventChannels[nextIndex]);
+      } else {
+        const currentNum = parseInt(state.currentChannel.number);
+        if (isNaN(currentNum)) return;
+        const nextNum = direction === 'next' ? currentNum + 1 : currentNum - 1;
+        if (nextNum < 1) return;
+        let nextChannel = state.channels.find(c => parseInt(c.number) === nextNum);
+        if (!nextChannel) {
+          nextChannel = {
+            number: nextNum.toString(),
+            name: state.autoNamesMap[nextNum.toString()] || `Canal ${nextNum}`,
+            event: 'Canal directo', sport: 'TV', time: ''
+          };
+        }
+        playChannel(nextChannel);
+      }
     }
 
-    function applyFilter(filter) {
-      state.currentFilter = filter;
-      document.querySelectorAll('.filter-button').forEach(b => b.classList.remove('filter-button--active'));
-      const btn = document.getElementById(`filter${filter.charAt(0).toUpperCase() + filter.slice(1)}`);
-      if(btn) btn.classList.add('filter-button--active');
+    function updateDynamicFilters() {
+      const filterContainer = document.getElementById('dynamicFilters');
+      if (!state.channels.length) return;
+      const sports = [...new Set(state.channels.map(c => c.sport).filter(Boolean))].sort();
+      filterContainer.innerHTML = sports.map(sport => {
+        const emoji = getEmojiOnly(sport);
+        const isActive = state.sportFilter === sport;
+        return `
+          <button class="filter-chip ${isActive ? 'filter-chip--active' : ''}" 
+                  onclick="toggleSportFilter('${sport}')">
+            <span>${emoji}</span> ${sport}
+          </button>
+        `;
+      }).join('');
+    }
+
+    function toggleSportFilter(sport) {
+      if (state.sportFilter === sport) {
+        state.sportFilter = null;
+      } else {
+        state.sportFilter = sport;
+        state.currentFilter = 'all';
+        document.querySelectorAll('.filter-button').forEach(b => b.classList.remove('filter-button--active'));
+        document.getElementById('filterAll').classList.add('filter-button--active');
+      }
       renderResults();
     }
 
     function renderResults() {
       const resultsDiv = document.getElementById('results');
+      updateDynamicFilters();
       
       const filtered = state.channels.filter(c => {
         const displayName = getDisplayName(c).toLowerCase();
         const eventName = (c.event || "").toLowerCase();
-        
+        if (state.sportFilter && c.sport !== state.sportFilter) return false;
         if (state.currentFilter === 'favorites' && !state.favorites.includes(c.number)) return false;
         if (state.currentFilter === 'live' && !isChannelLive(c)) return false;
         if (state.searchTerm && 
             !displayName.includes(state.searchTerm.toLowerCase()) && 
             !eventName.includes(state.searchTerm.toLowerCase()) && 
             c.number !== state.searchTerm) return false;
-        
         if (state.internationalFilter) {
           const isInternational = state.filteredKeywords.some(keyword => 
             displayName.includes(keyword.toLowerCase()) || 
@@ -487,7 +647,6 @@
           );
           if (isInternational) return false;
         }
-
         return true;
       });
 
@@ -498,13 +657,12 @@
           if (!groups[key]) groups[key] = [];
           groups[key].push(c);
         });
-
         resultsDiv.innerHTML = Object.entries(groups).map(([key, channels]) => {
           const [event, time, sport] = key.split('|');
           return `
             <div class="channel-group">
               <div class="channel-group__header">
-                <div class="channel-group__sport">${sport}</div>
+                <div class="channel-group__sport">${getSportWithEmoji(sport)}</div>
                 <div class="channel-group__title">
                   <span class="channel-time ${time === 'LIVE' ? 'channel-time--live' : ''}">${adjustTime(time)}</span>
                   ${event}
@@ -534,13 +692,6 @@
       }
     }
 
-    function clearFilters() {
-      state.searchTerm = '';
-      state.currentFilter = 'all';
-      document.getElementById('searchInput').value = '';
-      renderResults();
-    }
-
     function translateDate(text) {
       const dayMap = { 'Monday': 'Lunes', 'Tuesday': 'Martes', 'Wednesday': 'Miércoles', 'Thursday': 'Jueves', 'Friday': 'Viernes', 'Saturday': 'Sábado', 'Sunday': 'Domingo' };
       const monthMap = { 'January': 'Enero', 'February': 'Febrero', 'March': 'Marzo', 'April': 'Abril', 'May': 'Mayo', 'June': 'Junio', 'July': 'Julio', 'August': 'Agosto', 'September': 'Septiembre', 'October': 'Octubre', 'November': 'Noviembre', 'December': 'Diciembre' };
@@ -556,50 +707,41 @@
         const html = await response.text();
         
         const currentHash = hashCode(html);
-        if (state.lastHtmlHash === currentHash && state.channels.length > 0) {
-          renderResults();
-          const docCached = new DOMParser().parseFromString(html, "text/html");
-          const fechaElemento = docCached.querySelector(".daddy-schedule-title");
-          if (fechaElemento) {
-            const rawDate = fechaElemento.textContent.split('–')[0].trim();
-            document.getElementById('fecha').textContent = translateDate(rawDate);
-          }
-          return; 
-        }
-
         const doc = new DOMParser().parseFromString(html, "text/html");
-        const fechaElemento = doc.querySelector(".daddy-schedule-title");
         
+        // Actualizar fecha
+        const fechaElemento = doc.querySelector(".daddy-schedule-title");
         if (fechaElemento) {
           const rawDate = fechaElemento.textContent.split('–')[0].trim();
           document.getElementById('fecha').textContent = translateDate(rawDate);
         }
 
-        const found = [];
-        doc.querySelectorAll(".match-category").forEach(cat => {
-          let sport = cat.querySelector(".category-title")?.textContent.trim().replace(/\s*\(\d+\)/g, '');
-          cat.querySelectorAll(".match-section").forEach(sec => {
-            const time = sec.querySelector(".time")?.textContent.trim();
-            const event = sec.querySelector(".match-name")?.textContent.trim();
-            sec.querySelectorAll(".link-button").forEach(link => {
-              const textContent = link.textContent.trim();
-              if (textContent.includes("-HD") || textContent.includes("-4K")) return;
-              const match = textContent.match(/CH-(\d+)/i);
-              if (match) found.push({ number: match[1], name: textContent, time, event, sport });
+        if (state.lastHtmlHash !== currentHash || state.channels.length === 0) {
+          const found = [];
+          doc.querySelectorAll(".match-category").forEach(cat => {
+            let sport = cat.querySelector(".category-title")?.textContent.trim().replace(/\s*\(\d+\)/g, '');
+            cat.querySelectorAll(".match-section").forEach(sec => {
+              const time = sec.querySelector(".time")?.textContent.trim();
+              const event = sec.querySelector(".match-name")?.textContent.trim();
+              sec.querySelectorAll(".link-button").forEach(link => {
+                const match = link.textContent.trim().match(/CH-(\d+)/i);
+                if (match) found.push({ number: match[1], name: link.textContent.trim(), time, event, sport });
+              });
             });
           });
-        });
-
-        if (found.length > 0) {
-          state.channels = found;
-          state.lastHtmlHash = currentHash;
-          localStorage.setItem('channelsCache', JSON.stringify(found));
-          localStorage.setItem('lastHtmlHash', currentHash);
-          renderResults();
+          if (found.length > 0) {
+            state.channels = found;
+            state.lastHtmlHash = currentHash;
+            localStorage.setItem('channelsCache', JSON.stringify(found));
+            localStorage.setItem('lastHtmlHash', currentHash);
+          }
         }
+        renderResults();
       } catch (e) { 
         document.getElementById('fecha').textContent = "Error al conectar con la fuente"; 
-        if(state.channels.length > 0) renderResults();
+      } finally {
+        // Quitar el loader pase lo que pase tras un breve delay para suavidad
+        setTimeout(setAppReady, 600);
       }
     }
 
@@ -610,17 +752,9 @@
       clearTimeout(state.searchTimeout);
       if (/^\d+$/.test(state.searchTerm)) {
         state.searchTimeout = setTimeout(() => {
-          let targetChannel = state.channels.find(c => c.number === state.searchTerm);
-          if (!targetChannel) {
-            targetChannel = { 
-              number: state.searchTerm, 
-              name: state.autoNamesMap[state.searchTerm] || `Canal ${state.searchTerm}`, 
-              event: 'Canal directo', 
-              sport: 'TV', 
-              time: '' 
-            };
-          }
-          playChannel(targetChannel);
+          let target = state.channels.find(c => c.number === state.searchTerm);
+          if (!target) target = { number: state.searchTerm, name: state.autoNamesMap[state.searchTerm] || `Canal ${state.searchTerm}`, event: 'Canal directo', sport: 'TV', time: '' };
+          playChannel(target);
         }, 800);
       }
     };
@@ -629,15 +763,19 @@
     document.getElementById('nextChannelBtn').onclick = () => navigateEventChannel('next');
     document.getElementById('prevChannelBtn').onclick = () => navigateEventChannel('prev');
     document.getElementById('favoriteBtn').onclick = () => {
-      if (!state.currentChannel) return;
-      const num = state.currentChannel.number;
+      const num = state.currentChannel?.number;
+      if (!num) return;
       const idx = state.favorites.indexOf(num);
-      if (idx === -1) state.favorites.push(num); else state.favorites.splice(idx, 1);
+      idx === -1 ? state.favorites.push(num) : state.favorites.splice(idx, 1);
       localStorage.setItem('favorites', JSON.stringify(state.favorites));
       playChannel(state.currentChannel);
       renderResults();
     };
-    document.getElementById('clearFiltersBtn').onclick = clearFilters;
+    document.getElementById('clearFiltersBtn').onclick = () => {
+      state.searchTerm = ''; state.sportFilter = null;
+      document.getElementById('searchInput').value = '';
+      document.getElementById('filterAll').click();
+    };
     document.getElementById('openSettingsBtn').onclick = () => document.getElementById('settingsModal').classList.add('modal--active');
     document.getElementById('closeSettingsBtn').onclick = () => document.getElementById('settingsModal').classList.remove('modal--active');
     
@@ -675,10 +813,9 @@
       state.currentChannel = null;
     };
 
-    document.getElementById('filterAll').onclick = () => applyFilter('all');
-    document.getElementById('filterLive').onclick = () => applyFilter('live');
-    document.getElementById('filterFavorites').onclick = () => applyFilter('favorites');
-    document.getElementById('filterHistory').onclick = () => applyFilter('history');
+    document.getElementById('filterAll').onclick = () => { state.currentFilter = 'all'; state.sportFilter = null; renderResults(); };
+    document.getElementById('filterLive').onclick = () => { state.currentFilter = 'live'; renderResults(); };
+    document.getElementById('filterFavorites').onclick = () => { state.currentFilter = 'favorites'; renderResults(); };
 
     if(state.darkMode) document.body.classList.add('dark-mode');
     if (Object.keys(state.autoNamesMap).length === 0) syncAutoNames();
