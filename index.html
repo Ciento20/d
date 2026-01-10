@@ -104,7 +104,7 @@
       padding: 0 10px;
     }
 
-    .filter-button, .emoji-filter-btn {
+    .filter-button {
       background: transparent;
       border: none;
       color: var(--text-dim);
@@ -123,8 +123,8 @@
     .sidebar span { opacity: 0; transition: opacity 0.2s; pointer-events: none; }
     .sidebar:hover span { opacity: 1; pointer-events: auto; }
 
-    .filter-button:hover, .emoji-filter-btn:hover { background: var(--primary-light); color: var(--text); }
-    .filter-button--active, .emoji-filter-btn--active { background: var(--primary) !important; color: white !important; }
+    .filter-button:hover { background: var(--primary-light); color: var(--text); }
+    .filter-button--active { background: var(--primary) !important; color: white !important; }
 
     /* BUSCADOR Y BOTÓN LIMPIAR */
     .search-container {
@@ -274,19 +274,16 @@
       }
 
       .filter-button {
-        justify-content: center; /* Centra el emoji horizontalmente */
+        justify-content: center;
         padding: 0;
         height: 100%;
-        font-size: 1.4rem; /* Aumenta un poco el tamaño del emoji */
+        font-size: 1.4rem;
         gap: 0;
       }
 
       .main-content { margin-left: 0; margin-bottom: 80px; padding: 1rem; }
       
-      /* Ocultar el texto de los botones en móvil para centrar solo el emoji */
       .sidebar span { display: none !important; }
-      
-      #emojiFilters { display: none; }
       .search-container { max-width: 100%; }
     }
   </style>
@@ -301,13 +298,6 @@
         <button class="filter-button" id="filterLive">🔴 <span>Directo</span></button>
         <button class="filter-button" id="filterHistory">🕒 <span>Historial</span></button>
         <button class="filter-button" id="openSettingsBtn">⚙️ <span>Ajustes</span></button>
-      </div>
-      
-      <div class="nav-group" id="emojiFilters" style="margin-top: 2rem;">
-        <button class="emoji-filter-btn" data-filter="Fútbol">⚽ <span>Fútbol</span></button>
-        <button class="emoji-filter-btn" data-filter="Baloncesto">🏀 <span>Basket</span></button>
-        <button class="emoji-filter-btn" data-filter="Motorsport">🏁 <span>Motor</span></button>
-        <button class="emoji-filter-btn" data-filter="Spain ES Movistar M+">🇪🇸 <span>M+ España</span></button>
       </div>
     </nav>
 
@@ -391,7 +381,6 @@
       currentChannel: null,
       currentFilter: 'all',
       searchTerm: '',
-      activeEmojiFilters: [],
       favorites: JSON.parse(localStorage.getItem('favorites')) || [],
       customNames: JSON.parse(localStorage.getItem('customNames')) || {},
       baseDomain: localStorage.getItem('baseDomain') || 'daddylives.top/watch.php?id=',
@@ -417,7 +406,6 @@
         state.autoNamesMap = map;
         localStorage.setItem('autoNamesMap', JSON.stringify(map));
         renderResults();
-        console.log("Nombres sincronizados correctamente");
       } catch (e) {
         console.error("Error sincronizando nombres");
       }
@@ -491,7 +479,6 @@
         if (state.currentFilter === 'live' && !isChannelLive(c)) return false;
         if (state.searchTerm && !displayName.includes(state.searchTerm.toLowerCase()) && !c.event.toLowerCase().includes(state.searchTerm.toLowerCase()) && c.number !== state.searchTerm) return false;
         if (state.internationalFilter && state.filteredKeywords.some(k => c.name.includes(k))) return false;
-        if (state.activeEmojiFilters.length > 0 && !state.activeEmojiFilters.some(f => c.sport.includes(f) || c.event.includes(f))) return false;
         return true;
       });
 
@@ -540,12 +527,10 @@
 
     function clearFilters() {
       state.searchTerm = '';
-      state.activeEmojiFilters = [];
       state.currentFilter = 'all';
       document.getElementById('searchInput').value = '';
       document.querySelectorAll('.filter-button').forEach(b => b.classList.remove('filter-button--active'));
       document.getElementById('filterAll').classList.add('filter-button--active');
-      document.querySelectorAll('.emoji-filter-btn').forEach(btn => btn.classList.remove('emoji-filter-btn--active'));
       renderResults();
     }
 
@@ -573,15 +558,17 @@
 
         const found = [];
         doc.querySelectorAll(".match-category").forEach(cat => {
-          const sport = cat.querySelector(".category-title")?.textContent.trim();
+          let sport = cat.querySelector(".category-title")?.textContent.trim();
+          if (sport) {
+            sport = sport.replace(/\s*\(\d+\)/g, ''); 
+          }
+
           cat.querySelectorAll(".match-section").forEach(sec => {
             const time = sec.querySelector(".time")?.textContent.trim();
             const event = sec.querySelector(".match-name")?.textContent.trim();
             sec.querySelectorAll(".link-button").forEach(link => {
               const textContent = link.textContent.trim();
-              
               if (textContent.includes("-HD") || textContent.includes("-4K")) return;
-
               const match = textContent.match(/CH-(\d+)/i);
               const num = match ? match[1] : null;
 
@@ -649,15 +636,6 @@
     document.getElementById('filterLive').onclick = () => applyFilter('live');
     document.getElementById('filterFavorites').onclick = () => applyFilter('favorites');
     document.getElementById('filterHistory').onclick = () => applyFilter('history');
-    document.querySelectorAll('.emoji-filter-btn').forEach(btn => {
-      btn.onclick = () => {
-        const f = btn.dataset.filter;
-        const i = state.activeEmojiFilters.indexOf(f);
-        if(i === -1) state.activeEmojiFilters.push(f); else state.activeEmojiFilters.splice(i, 1);
-        btn.classList.toggle('emoji-filter-btn--active');
-        renderResults();
-      };
-    });
 
     document.getElementById('searchInput').oninput = (e) => {
       const val = e.target.value.trim();
