@@ -530,7 +530,14 @@
       sportEmojis: {
         "TV SHOWS": "📺", "SOCCER": "⚽", "CRICKET": "🏏", "TENNIS": "🎾", "MOTORSPORT": "🏁",
         "BADMINTON": "🏸", "MMA": "👊", "AM. FOOTBALL": "🏈", "NBA": "⛹️", "VOLLEYBALL": "🏐"
-      }
+      },
+      // LISTA DE PROXIES DISPONIBLES
+      proxies: [
+        "https://api.allorigins.win/raw?url=",
+        "https://api.codetabs.com/v1/proxy/?quest=",
+        "https://corsproxy.io/?",
+        "https://thingproxy.freeboard.io/fetch/"
+      ]
     };
 
     // FUNCIONES DE TEMA Y COLOR
@@ -567,10 +574,27 @@
       return hash.toString();
     }
 
+    /**
+     * FUNCIÓN AUXILIAR DE REDUNDANCIA
+     * Intenta descargar contenido usando los proxies de la lista uno por uno.
+     */
+    async function fetchWithFallback(targetUrl) {
+      for (const proxy of state.proxies) {
+        try {
+          const response = await fetch(proxy + encodeURIComponent(targetUrl));
+          if (!response.ok) throw new Error('Proxy falló');
+          const data = await response.text();
+          if (data && data.length > 100) return data; // Verificación mínima de contenido
+        } catch (e) {
+          console.warn(`Error con el proxy ${proxy}, intentando el siguiente...`);
+        }
+      }
+      throw new Error('Todos los proxies fallaron');
+    }
+
     async function syncAutoNames() {
       try {
-        const response = await fetch("https://api.allorigins.win/raw?url=" + encodeURIComponent("https://daddylives.top/24-7-channels/"));
-        const html = await response.text();
+        const html = await fetchWithFallback("https://daddylives.top/24-7-channels/");
         const doc = new DOMParser().parseFromString(html, "text/html");
         const map = {};
         doc.querySelectorAll(".gi").forEach(el => {
@@ -581,7 +605,7 @@
         state.autoNamesMap = map;
         localStorage.setItem('autoNamesMap', JSON.stringify(map));
         renderResults();
-      } catch (e) { console.error("Error sincronizando nombres"); }
+      } catch (e) { console.error("Error sincronizando nombres:", e); }
     }
 
     function getDisplayName(channel) {
@@ -790,8 +814,7 @@
 
     async function scrape() {
       try {
-        const response = await fetch("https://api.allorigins.win/raw?url=" + encodeURIComponent("https://daddylives.top/match-schedule/"));
-        const html = await response.text();
+        const html = await fetchWithFallback("https://daddylives.top/match-schedule/");
         const currentHash = hashCode(html);
         const doc = new DOMParser().parseFromString(html, "text/html");
         
@@ -811,9 +834,8 @@
               sec.querySelectorAll(".link-button").forEach(link => {
                 const linkText = link.textContent.trim();
                 
-                // NUEVO FILTRO DE CANALES FALSOS (CH-4K y CH-HD)
                 if (linkText.toUpperCase() === "CH-4K" || linkText.toUpperCase() === "CH-HD") {
-                  return; // Salta este elemento
+                  return; 
                 }
 
                 const match = linkText.match(/CH-(\d+)/i);
@@ -832,7 +854,8 @@
         }
         renderResults();
       } catch (e) { 
-        document.getElementById('fecha').textContent = "Error al conectar con la fuente"; 
+        document.getElementById('fecha').textContent = "Error al conectar con la fuente (Proxies agotados)"; 
+        console.error(e);
       } finally {
         setTimeout(setAppReady, 600);
       }
@@ -918,7 +941,7 @@
 
     // INICIALIZACIÓN
     if(state.darkMode) document.body.classList.add('dark-mode');
-    changeThemeColor(state.primaryColor); // Aplicar color guardado
+    changeThemeColor(state.primaryColor);
     if (Object.keys(state.autoNamesMap).length === 0) syncAutoNames();
     scrape();
   </script>
