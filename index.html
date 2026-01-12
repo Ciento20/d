@@ -255,7 +255,6 @@
     .clear-filters-btn:hover {
       background: #ef4444;
       border-color: #ef4444;
-      transform: rotate(15deg);
     }
 
     /* CARRUSELES */
@@ -520,7 +519,8 @@
       autoNamesMap: JSON.parse(localStorage.getItem('autoNamesMap')) || {},
       currentChannel: null,
       currentFilter: localStorage.getItem('lastFilter') || 'all',
-      sportFilter: localStorage.getItem('lastSportFilter') || null,
+      sportFilters: JSON.parse(localStorage.getItem('lastSportFilters')) || [],
+      activeFilters: JSON.parse(localStorage.getItem('activeFilters')) || { favorites: false, live: false },
       searchTerm: '',
       favorites: JSON.parse(localStorage.getItem('favorites')) || [],
       customNames: JSON.parse(localStorage.getItem('customNames')) || {},
@@ -698,20 +698,20 @@
       const filterContainer = document.getElementById('dynamicFilters');
       if (!state.channels.length) return;
       const sports = [...new Set(state.channels.map(c => c.sport).filter(Boolean))].sort();      const favChip = `
-        <button class="filter-chip ${state.currentFilter === 'favorites' ? 'filter-chip--active' : ''}" 
-                onclick="document.getElementById('filterFavorites').click()">
+        <button class="filter-chip ${state.activeFilters.favorites ? 'filter-chip--active' : ''}" 
+                onclick="toggleMainFilter('favorites')">
           <span>⭐</span> Favoritos
         </button>`;
 
       const liveChip = `
-        <button class="filter-chip ${state.currentFilter === 'live' ? 'filter-chip--active' : ''}" 
-                onclick="document.getElementById('filterLive').click()">
+        <button class="filter-chip ${state.activeFilters.live ? 'filter-chip--active' : ''}" 
+                onclick="toggleMainFilter('live')">
           <span>🔴</span> Directo
         </button>`;
 
       filterContainer.innerHTML = favChip + liveChip + sports.map(sport => {
         const emoji = getEmojiOnly(sport);
-        const isActive = state.sportFilter === sport;
+        const isActive = state.sportFilters.includes(sport);
         return `
           <button class="filter-chip ${isActive ? 'filter-chip--active' : ''}" 
                   onclick="toggleSportFilter('${sport}')">
@@ -722,16 +722,22 @@
     }
 
     function toggleSportFilter(sport) {
-      if (state.sportFilter === sport) {
-        state.sportFilter = null;
+      const index = state.sportFilters.indexOf(sport);
+      if (index > -1) {
+        state.sportFilters.splice(index, 1);
       } else {
-        state.sportFilter = sport;
+        state.sportFilters.push(sport);
         state.currentFilter = 'all';
         document.querySelectorAll('.filter-button').forEach(b => b.classList.remove('filter-button--active'));
         document.getElementById('filterAll').classList.add('filter-button--active');
       }
-      localStorage.setItem('lastSportFilter', state.sportFilter || '');
-      localStorage.setItem('lastFilter', state.currentFilter);
+      localStorage.setItem('lastSportFilters', JSON.stringify(state.sportFilters));
+      renderResults();
+    }
+
+    function toggleMainFilter(type) {
+      state.activeFilters[type] = !state.activeFilters[type];
+      localStorage.setItem('activeFilters', JSON.stringify(state.activeFilters));
       renderResults();
     }
 
@@ -763,9 +769,9 @@
         const displayName = getDisplayName(c).toLowerCase();
         const eventName = (c.event || "").toLowerCase();
         
-        if (state.sportFilter && c.sport !== state.sportFilter) return false;
-        if (state.currentFilter === 'favorites' && !state.favorites.includes(c.number)) return false;
-        if (state.currentFilter === 'live' && !isChannelLive(c)) return false;
+        if (state.sportFilters.length > 0 && !state.sportFilters.includes(c.sport)) return false;
+        if (state.activeFilters.favorites && !state.favorites.includes(c.number)) return false;
+        if (state.activeFilters.live && !isChannelLive(c)) return false;
         
         if (state.searchTerm && 
             !displayName.includes(state.searchTerm.toLowerCase()) && 
@@ -912,7 +918,7 @@
       renderResults();
     };
     document.getElementById('clearFiltersBtn').onclick = () => {
-      state.searchTerm = ''; state.sportFilter = null;
+      state.searchTerm = ''; state.sportFilters = []; state.activeFilters = { favorites: false, live: false };
       document.getElementById('searchInput').value = '';
       document.getElementById('filterAll').click();
     };
@@ -954,18 +960,21 @@
     }
 
     function updateNavState(filter) {
-      const map = { 'all': 'filterAll', 'live': 'filterLive', 'favorites': 'filterFavorites', 'catalog': 'filterCatalog' };
-      setActiveNav(map[filter]);
-      localStorage.setItem('lastFilter', filter);
-      if (filter !== 'all') {
-        state.sportFilter = null;
-        localStorage.removeItem('lastSportFilter');
+      const map = { 'all': 'filterAll', 'catalog': 'filterCatalog' };
+      if (map[filter]) {
+        setActiveNav(map[filter]);
+        state.currentFilter = filter;
+        if (filter === 'catalog') {
+          state.activeFilters = { favorites: false, live: false };
+          state.sportFilters = [];
+        }
+        renderResults();
       }
     }
 
     document.getElementById('filterAll').onclick = () => { state.currentFilter = 'all'; state.sportFilter = null; localStorage.removeItem('lastSportFilter'); updateNavState('all'); renderResults(); };
-    document.getElementById('filterLive').onclick = () => { state.currentFilter = 'live'; updateNavState('live'); renderResults(); };
-    document.getElementById('filterFavorites').onclick = () => { state.currentFilter = 'favorites'; updateNavState('favorites'); renderResults(); };
+    document.getElementById('filterLive').onclick = () => toggleMainFilter('live');
+    document.getElementById('filterFavorites').onclick = () => toggleMainFilter('favorites');
     document.getElementById('filterCatalog').onclick = () => { state.currentFilter = 'catalog'; updateNavState('catalog'); renderResults(); };
 
     // INICIALIZACIÓN
