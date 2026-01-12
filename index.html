@@ -63,18 +63,7 @@
       100% { transform: translateX(1000%); width: 10%; }
     }
 
-    .loader-text-overlay {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      background: var(--card-bg);
-      padding: 10px 20px;
-      border-radius: 50px;
-      border: 1px solid var(--primary);
-      font-size: 0.8rem;
-      z-index: 9999;
-      box-shadow: var(--shadow-lg);
-    }
+    
 
     /* CONTENEDOR PRINCIPAL - SIEMPRE VISIBLE */
     .app-container {
@@ -84,8 +73,7 @@
       opacity: 1;
     }
 
-    .loading-finished #loader-container,
-    .loading-finished .loader-text-overlay {
+    .loading-finished #loader-container {
       opacity: 0;
       visibility: hidden;
     }
@@ -420,9 +408,7 @@
     <div class="loader-bar"></div>
   </div>
 
-  <div class="loader-text-overlay" id="loader-status">
-    📡 Sincronizando canales...
-  </div>
+  
 
   <div class="app-container">
     <nav class="sidebar">
