@@ -109,7 +109,7 @@
     .main-content {
       flex: 1;
       margin-left: 80px;
-      padding: 1rem 2rem;
+      padding: 0.5rem 2rem; /* Reducido padding superior de 1rem a 0.5rem */
       width: calc(100% - 80px);
       display: flex;
       flex-direction: column;
@@ -120,8 +120,11 @@
       display: flex;
       gap: 10px;
       overflow-x: auto;
-      padding: 10px 0 20px 0;
+      padding: 0; /* Ajustado para que no ocupe espacio si está vacío */
       scrollbar-width: none;
+    }
+    .dynamic-filters:not(:empty) {
+      padding: 5px 0 15px 0;
     }
     .dynamic-filters::-webkit-scrollbar { display: none; }
 
@@ -153,7 +156,7 @@
 
     /* REPRODUCTOR */
     .player-section {
-      margin-bottom: 2rem;
+      margin-bottom: 1rem; /* Reducido de 2rem */
       border-radius: var(--radius-md);
       overflow: hidden;
       background: #000;
@@ -215,7 +218,7 @@
       display: flex;
       align-items: center;
       gap: 12px;
-      margin-bottom: 1rem;
+      margin-bottom: 0.5rem; /* Reducido de 1rem */
       max-width: 560px;
     }
 
@@ -237,21 +240,30 @@
       cursor: pointer; display: flex; align-items: center; justify-content: center;
     }
 
+    /* FECHA CONTAINER - Ajuste de espacio */
+    #fechaContainer {
+      margin-bottom: 0.5rem;
+    }
+    #fecha {
+      margin: 0; /* Eliminado márgenes por defecto */
+      font-size: 1.1rem;
+      color: var(--text-dim);
+    }
+
     /* --- NUEVA CUADRÍCULA DE CATÁLOGO --- */
     .grid-layout {
       display: grid;
-      /* Define columnas automáticas que se ajustan al tamaño mínimo de 180px */
       grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
       gap: 1.2rem;
       padding: 1rem 0;
     }
 
     .grid-layout .channel-card {
-      min-width: 0; /* Permite que la card se encoja al tamaño de la celda */
+      min-width: 0;
       margin: 0;
     }
 
-    /* CARRUSELES (Originales para Inicio/Directos) */
+    /* CARRUSELES */
     .channel-group { margin-bottom: 2.5rem; }
     .channel-group__header { margin-bottom: 1rem; padding-left: 0.5rem; }
     .channel-group__title { font-size: 1.2rem; font-weight: bold; display: flex; align-items: center; gap: 10px; }
@@ -353,7 +365,7 @@
       .filter-button { justify-content: center; padding: 0; height: 100%; font-size: 1.4rem; gap: 0; }
       .main-content { margin-left: 0; margin-bottom: 80px; padding: 1rem; }
       .sidebar span { display: none !important; }
-      .search-container { max-width: 100%; }
+      .search-container { max-width: 100%; margin-bottom: 0.8rem; }
       .grid-layout { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.8rem; }
     }
   </style>
@@ -494,12 +506,6 @@
 
     function setAppReady() { document.body.classList.add('loading-finished'); }
 
-    function hashCode(str) {
-      let hash = 0;
-      for (let i = 0; i < str.length; i++) { hash = ((hash << 5) - hash) + str.charCodeAt(i); hash |= 0; }
-      return hash.toString();
-    }
-
     async function fetchWithFallback(targetUrl) {
       for (const proxy of state.proxies) {
         try {
@@ -520,7 +526,9 @@
         doc.querySelectorAll(".gi").forEach(el => {
           const name = el.querySelector(".text")?.textContent.trim();
           const num = el.querySelector(".num")?.textContent.trim();
-          if (num && name) map[num] = name;
+          if (num && name && !name.toUpperCase().includes("4K")) {
+              map[num] = name;
+          }
         });
         state.autoNamesMap = map;
         localStorage.setItem('autoNamesMap', JSON.stringify(map));
@@ -612,12 +620,14 @@
       }
 
       const filtered = sourceList.filter(c => {
-        const displayName = getDisplayName(c).toLowerCase();
+        const displayName = getDisplayName(c);
+        const nameUpper = displayName.toUpperCase();
+        if (nameUpper.includes("4K")) return false;
         if (state.sportFilter && c.sport !== state.sportFilter) return false;
         if (state.currentFilter === 'favorites' && !state.favorites.includes(c.number)) return false;
         if (state.currentFilter === 'live' && !isChannelLive(c)) return false;
-        if (state.searchTerm && !displayName.includes(state.searchTerm.toLowerCase()) && c.number !== state.searchTerm) return false;
-        if (state.internationalFilter && state.filteredKeywords.some(kw => displayName.includes(kw.toLowerCase()))) return false;
+        if (state.searchTerm && !nameUpper.includes(state.searchTerm.toUpperCase()) && c.number !== state.searchTerm) return false;
+        if (state.internationalFilter && state.filteredKeywords.some(kw => nameUpper.includes(kw.toUpperCase()))) return false;
         return true;
       });
 
@@ -627,7 +637,6 @@
       }
 
       if (state.currentFilter === 'catalog') {
-        // RENDER MODO CATÁLOGO (Cuadrícula Multicolumna)
         resultsDiv.innerHTML = `
           <div class="channel-group">
             <div class="channel-group__header">
@@ -644,7 +653,6 @@
             </div>
           </div>`;
       } else {
-        // RENDER MODO NORMAL (Carruseles por Evento)
         const groups = {};
         filtered.forEach(c => {
           const key = `${c.event}|${c.time}|${c.sport}`;
@@ -690,8 +698,11 @@
             const time = sec.querySelector(".time")?.textContent.trim();
             const event = sec.querySelector(".match-name")?.textContent.trim();
             sec.querySelectorAll(".link-button").forEach(link => {
-              const match = link.textContent.trim().match(/CH-(\d+)/i);
-              if (match) found.push({ number: match[1], name: link.textContent.trim(), time, event, sport });
+              const channelName = link.textContent.trim();
+              const match = channelName.match(/CH-(\d+)/i);
+              if (match && !channelName.toUpperCase().includes("4K")) {
+                found.push({ number: match[1], name: channelName, time, event, sport });
+              }
             });
           });
         });
@@ -704,7 +715,6 @@
       finally { setAppReady(); }
     }
 
-    // EVENTOS
     document.getElementById('searchInput').oninput = (e) => {
       state.searchTerm = e.target.value.trim();
       renderResults();
@@ -747,7 +757,6 @@
     document.getElementById('filterFavorites').onclick = () => { state.currentFilter = 'favorites'; setActiveNav('filterFavorites'); renderResults(); };
     document.getElementById('filterCatalog').onclick = () => { state.currentFilter = 'catalog'; state.sportFilter = null; setActiveNav('filterCatalog'); renderResults(); };
 
-    // INICIALIZACIÓN
     if(state.darkMode) document.body.classList.add('dark-mode');
     changeThemeColor(state.primaryColor);
     if (Object.keys(state.autoNamesMap).length === 0) syncAutoNames();
