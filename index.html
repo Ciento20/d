@@ -39,11 +39,11 @@
       transition: background 0.3s;
     }
 
-    /* LOADER DISCRETO */
+    /* LOADER DISCRETO (NO BLOQUEANTE) */
     #loader-container {
       position: fixed;
       top: 0; left: 0;
-      width: 100%; height: 4px;
+      width: 100%; height: 4px; /* Barra delgada superior */
       background: var(--border-color);
       z-index: 9999;
       transition: opacity 0.5s ease;
@@ -76,6 +76,7 @@
       box-shadow: var(--shadow-lg);
     }
 
+    /* CONTENEDOR PRINCIPAL - SIEMPRE VISIBLE */
     .app-container {
       display: flex;
       flex-direction: row;
@@ -109,22 +110,19 @@
     .main-content {
       flex: 1;
       margin-left: 80px;
-      padding: 0.5rem 2rem; /* Reducido padding superior de 1rem a 0.5rem */
+      padding: 1rem 2rem;
       width: calc(100% - 80px);
       display: flex;
       flex-direction: column;
     }
 
-    /* FILTROS */
+    /* FILTROS DINÁMICOS */
     .dynamic-filters {
       display: flex;
       gap: 10px;
       overflow-x: auto;
-      padding: 0; /* Ajustado para que no ocupe espacio si está vacío */
+      padding: 10px 0 20px 0;
       scrollbar-width: none;
-    }
-    .dynamic-filters:not(:empty) {
-      padding: 5px 0 15px 0;
     }
     .dynamic-filters::-webkit-scrollbar { display: none; }
 
@@ -156,7 +154,7 @@
 
     /* REPRODUCTOR */
     .player-section {
-      margin-bottom: 1rem; /* Reducido de 2rem */
+      margin-bottom: 2rem;
       border-radius: var(--radius-md);
       overflow: hidden;
       background: #000;
@@ -178,6 +176,7 @@
       align-items: center;
       justify-content: center;
       gap: 15px;
+      position: relative;
     }
 
     .player-controls--active { display: flex; }
@@ -218,11 +217,14 @@
       display: flex;
       align-items: center;
       gap: 12px;
-      margin-bottom: 0.5rem; /* Reducido de 1rem */
+      margin-bottom: 1rem;
       max-width: 560px;
     }
 
-    .search-box { flex: 1; }
+    .search-box {
+      flex: 1;
+    }
+
     .search-box input {
       width: 100%;
       background: var(--card-bg);
@@ -231,36 +233,29 @@
       border-radius: 50px;
       color: white;
       outline: none;
+      box-sizing: border-box;
     }
 
     .clear-filters-btn {
-      width: 45px; height: 45px; border-radius: 50%;
+      width: 45px;
+      height: 45px;
+      border-radius: 50%;
       border: 1px solid var(--border-color);
-      background: var(--card-bg); color: var(--text);
-      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      background: var(--card-bg);
+      color: var(--text);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      transition: all 0.3s ease;
+      flex-shrink: 0;
     }
 
-    /* FECHA CONTAINER - Ajuste de espacio */
-    #fechaContainer {
-      margin-bottom: 0.5rem;
-    }
-    #fecha {
-      margin: 0; /* Eliminado márgenes por defecto */
-      font-size: 1.1rem;
-      color: var(--text-dim);
-    }
-
-    /* --- NUEVA CUADRÍCULA DE CATÁLOGO --- */
-    .grid-layout {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-      gap: 1.2rem;
-      padding: 1rem 0;
-    }
-
-    .grid-layout .channel-card {
-      min-width: 0;
-      margin: 0;
+    .clear-filters-btn:hover {
+      background: #ef4444;
+      border-color: #ef4444;
+      transform: rotate(15deg);
     }
 
     /* CARRUSELES */
@@ -285,12 +280,12 @@
       border-radius: var(--radius-md);
       padding: 1.2rem;
       cursor: pointer;
-      transition: transform 0.3s ease, border-color 0.3s;
+      transition: transform 0.3s ease;
       flex-shrink: 0;
     }
 
     .channel-card:hover {
-      transform: translateY(-5px);
+      transform: scale(1.05);
       border-color: var(--primary);
       box-shadow: 0 0 15px var(--primary-light);
     }
@@ -303,6 +298,31 @@
       background: #ff0000; border-radius: 50%; margin-right: 6px;
       animation: pulse 1.5s infinite;
     }
+
+    /* NO RESULTS */
+    .no-results-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-grow: 1;
+      width: 100%;
+      min-height: 300px;
+    }
+
+    .no-results {
+      text-align: center;
+      padding: 2rem;
+      background: var(--card-bg);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-lg);
+      max-width: 400px;
+      width: 90%;
+      border: 1px solid var(--border-color);
+    }
+
+    .no-results-icon { font-size: 2.5rem; margin-bottom: 1rem; opacity: 0.5; }
+    .no-results-text { font-size: 1.1rem; color: var(--text); margin-bottom: 0.5rem; font-weight: 600; }
+    .no-results-hint { font-size: 0.9rem; color: var(--text-dim); line-height: 1.4; }
 
     /* MODALES */
     .modal {
@@ -331,14 +351,19 @@
       margin-bottom: 1.2rem;
     }
 
+    /* COLOR PICKER */
     .color-picker { display: flex; gap: 10px; margin-top: 5px; }
     .color-option {
         width: 32px; height: 32px;
-        border-radius: 50%; border: 2px solid #555;
-        cursor: pointer; transition: transform 0.2s;
+        border-radius: 50%;
+        border: 2px solid #555;
+        cursor: pointer;
+        transition: transform 0.2s, border-color 0.2s;
     }
+    .color-option:hover { transform: scale(1.15); }
     .color-option.active { border-color: white; outline: 2px solid var(--primary); }
 
+    /* SWITCHES */
     .settings-switch { position: relative; width: 44px; height: 22px; }
     .settings-switch input { opacity: 0; width: 0; height: 0; }
     .settings-slider {
@@ -365,8 +390,7 @@
       .filter-button { justify-content: center; padding: 0; height: 100%; font-size: 1.4rem; gap: 0; }
       .main-content { margin-left: 0; margin-bottom: 80px; padding: 1rem; }
       .sidebar span { display: none !important; }
-      .search-container { max-width: 100%; margin-bottom: 0.8rem; }
-      .grid-layout { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.8rem; }
+      .search-container { max-width: 100%; }
     }
   </style>
 </head>
@@ -376,7 +400,9 @@
     <div class="loader-bar"></div>
   </div>
 
-  <div class="loader-text-overlay" id="loader-status">📡 Sincronizando canales...</div>
+  <div class="loader-text-overlay" id="loader-status">
+    📡 Sincronizando canales...
+  </div>
 
   <div class="app-container">
     <nav class="sidebar">
@@ -482,10 +508,21 @@
       internationalFilter: localStorage.getItem('internationalFilter') === 'true',
       darkMode: localStorage.getItem('darkMode') !== 'false',
       primaryColor: localStorage.getItem('miWeb_color') || '#2563eb',
-      filteredKeywords: ["Cricket", "Russia", "Golf", "NZ", "BR", "Morocco", "Arabic", "Astro", "Willow", "SuperSport", "Star Sports", "Sony Ten", "France", "Turkiye", "Turkey", "Portugal", "Serbia", "MENA", "DE", "Croatia", "Brasil", "Israel", "Italy", "Poland", "NL"],
+      filteredKeywords: [
+        "Cricket", "Russia", "Golf", "PL", "NZ", "BR", "Morocco", "Malaysia", "Arabic", "Astro", "Willow", "SuperSport", "Star Sports", "Sony Ten",
+        "France", "Turkiye", "Turkey", "Portugal", "Serbia", "MENA", "DE", "Croatia", "Brasil", "Israel", "Italy", "Poland", "NL"
+      ],
       searchTimeout: null,
-      sportEmojis: {"TV SHOWS": "📺", "SOCCER": "⚽", "CRICKET": "🏏", "TENNIS": "🎾", "MOTORSPORT": "🏁", "BADMINTON": "🏸", "MMA": "👊", "AM. FOOTBALL": "🏈", "NBA": "⛹️", "VOLLEYBALL": "🏐"},
-      proxies: ["https://api.allorigins.win/raw?url=", "https://api.codetabs.com/v1/proxy/?quest=", "https://corsproxy.io/?", "https://thingproxy.freeboard.io/fetch/"]
+      sportEmojis: {
+        "TV SHOWS": "📺", "SOCCER": "⚽", "CRICKET": "🏏", "TENNIS": "🎾", "MOTORSPORT": "🏁",
+        "BADMINTON": "🏸", "MMA": "👊", "AM. FOOTBALL": "🏈", "NBA": "⛹️", "VOLLEYBALL": "🏐"
+      },
+      proxies: [
+        "https://api.allorigins.win/raw?url=",
+        "https://api.codetabs.com/v1/proxy/?quest=",
+        "https://corsproxy.io/?",
+        "https://thingproxy.freeboard.io/fetch/"
+      ]
     };
 
     function hexToRgb(hex) {
@@ -501,21 +538,38 @@
         document.documentElement.style.setProperty('--primary-rgb', `${rgb.r}, ${rgb.g}, ${rgb.b}`);
         localStorage.setItem('miWeb_color', color);
         state.primaryColor = color;
-        document.querySelectorAll('.color-option').forEach(btn => btn.classList.toggle('active', btn.getAttribute('data-color') === color));
+        
+        document.querySelectorAll('.color-option').forEach(btn => {
+            btn.classList.toggle('active', btn.getAttribute('data-color') === color);
+        });
     }
 
-    function setAppReady() { document.body.classList.add('loading-finished'); }
+    function setAppReady() {
+      document.body.classList.add('loading-finished');
+    }
+
+    function hashCode(str) {
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash |= 0;
+      }
+      return hash.toString();
+    }
 
     async function fetchWithFallback(targetUrl) {
       for (const proxy of state.proxies) {
         try {
           const response = await fetch(proxy + encodeURIComponent(targetUrl));
-          if (!response.ok) throw new Error();
+          if (!response.ok) throw new Error('Proxy falló');
           const data = await response.text();
           if (data && data.length > 100) return data;
-        } catch (e) { console.warn(`Proxy falló: ${proxy}`); }
+        } catch (e) {
+          console.warn(`Error con el proxy ${proxy}, intentando el siguiente...`);
+        }
       }
-      throw new Error('Error de conexión');
+      throw new Error('Todos los proxies fallaron');
     }
 
     async function syncAutoNames() {
@@ -526,9 +580,7 @@
         doc.querySelectorAll(".gi").forEach(el => {
           const name = el.querySelector(".text")?.textContent.trim();
           const num = el.querySelector(".num")?.textContent.trim();
-          if (num && name && !name.toUpperCase().includes("4K")) {
-              map[num] = name;
-          }
+          if (num && name) map[num] = name;
         });
         state.autoNamesMap = map;
         localStorage.setItem('autoNamesMap', JSON.stringify(map));
@@ -550,6 +602,15 @@
       return sportName;
     }
 
+    function getEmojiOnly(sportName) {
+      if (!sportName) return "📺";
+      const upperSport = sportName.toUpperCase();
+      for (const [key, emoji] of Object.entries(state.sportEmojis)) {
+        if (upperSport.includes(key)) return emoji;
+      }
+      return "🏆";
+    }
+
     function adjustTime(time) {
       if (!time || time === 'LIVE') return time;
       const [h, m] = time.split(':').map(Number);
@@ -563,7 +624,8 @@
       const current = now.getHours() * 60 + now.getMinutes();
       const adjusted = adjustTime(channel.time);
       const [h, m] = adjusted.split(':').map(Number);
-      return current >= (h * 60 + m) - 15 && current <= (h * 60 + m) + 120;
+      const start = h * 60 + m;
+      return current >= start - 15 && current <= start + 120;
     }
 
     function playChannel(channel) {
@@ -587,141 +649,222 @@
 
     function navigateEventChannel(direction) {
       if (!state.currentChannel) return;
-      const eventChannels = state.channels.filter(c => state.currentChannel.event && c.event === state.currentChannel.event);
+      const eventChannels = state.channels.filter(c => 
+        state.currentChannel.event && c.event === state.currentChannel.event
+      );
 
       if (eventChannels.length > 1) {
         const currentIndex = eventChannels.findIndex(c => c.number === state.currentChannel.number);
-        let nextIndex = direction === 'next' ? (currentIndex + 1) % eventChannels.length : (currentIndex - 1 + eventChannels.length) % eventChannels.length;
+        let nextIndex = direction === 'next' ? 
+          (currentIndex + 1) % eventChannels.length : 
+          (currentIndex - 1 + eventChannels.length) % eventChannels.length;
         playChannel(eventChannels[nextIndex]);
       } else {
         const currentNum = parseInt(state.currentChannel.number);
         if (isNaN(currentNum)) return;
         const nextNum = direction === 'next' ? currentNum + 1 : currentNum - 1;
         if (nextNum < 1) return;
-        let nextChannel = state.channels.find(c => parseInt(c.number) === nextNum) || {
+        let nextChannel = state.channels.find(c => parseInt(c.number) === nextNum);
+        if (!nextChannel) {
+          nextChannel = {
             number: nextNum.toString(),
             name: state.autoNamesMap[nextNum.toString()] || `Canal ${nextNum}`,
             event: 'Canal directo', sport: 'TV', time: ''
-        };
+          };
+        }
         playChannel(nextChannel);
       }
     }
 
+    function updateDynamicFilters() {
+      const filterContainer = document.getElementById('dynamicFilters');
+      if (!state.channels.length) return;
+      const sports = [...new Set(state.channels.map(c => c.sport).filter(Boolean))].sort();
+      filterContainer.innerHTML = sports.map(sport => {
+        const emoji = getEmojiOnly(sport);
+        const isActive = state.sportFilter === sport;
+        return `
+          <button class="filter-chip ${isActive ? 'filter-chip--active' : ''}" 
+                  onclick="toggleSportFilter('${sport}')">
+            <span>${emoji}</span> ${sport}
+          </button>
+        `;
+      }).join('');
+    }
+
+    function toggleSportFilter(sport) {
+      if (state.sportFilter === sport) {
+        state.sportFilter = null;
+      } else {
+        state.sportFilter = sport;
+        state.currentFilter = 'all';
+        document.querySelectorAll('.filter-button').forEach(b => b.classList.remove('filter-button--active'));
+        document.getElementById('filterAll').classList.add('filter-button--active');
+      }
+      renderResults();
+    }
+
     function renderResults() {
       const resultsDiv = document.getElementById('results');
+      updateDynamicFilters();
+      
       let sourceList = state.channels;
 
+      // MODO CATÁLOGO: Crear lista basada en todos los números conocidos
       if (state.currentFilter === 'catalog') {
-        const allKnownNumbers = new Set([...state.channels.map(c => c.number), ...Object.keys(state.autoNamesMap)]);
+        const allKnownNumbers = new Set([
+            ...state.channels.map(c => c.number),
+            ...Object.keys(state.autoNamesMap)
+        ]);
         sourceList = Array.from(allKnownNumbers).map(num => {
             const cached = state.channels.find(c => c.number === num);
-            return cached || { number: num, name: state.autoNamesMap[num] || `Canal ${num}`, event: 'Disponible en Catálogo', sport: 'TV 24/7', time: '' };
+            return cached || { 
+                number: num, 
+                name: state.autoNamesMap[num] || `Canal ${num}`, 
+                event: 'Disponible en Catálogo', 
+                sport: 'TV 24/7', 
+                time: '' 
+            };
         }).sort((a, b) => parseInt(a.number) - parseInt(b.number));
       }
 
       const filtered = sourceList.filter(c => {
-        const displayName = getDisplayName(c);
-        const nameUpper = displayName.toUpperCase();
-        if (nameUpper.includes("4K")) return false;
+        const displayName = getDisplayName(c).toLowerCase();
+        const eventName = (c.event || "").toLowerCase();
+        
         if (state.sportFilter && c.sport !== state.sportFilter) return false;
         if (state.currentFilter === 'favorites' && !state.favorites.includes(c.number)) return false;
         if (state.currentFilter === 'live' && !isChannelLive(c)) return false;
-        if (state.searchTerm && !nameUpper.includes(state.searchTerm.toUpperCase()) && c.number !== state.searchTerm) return false;
-        if (state.internationalFilter && state.filteredKeywords.some(kw => nameUpper.includes(kw.toUpperCase()))) return false;
+        
+        if (state.searchTerm && 
+            !displayName.includes(state.searchTerm.toLowerCase()) && 
+            !eventName.includes(state.searchTerm.toLowerCase()) && 
+            c.number !== state.searchTerm) return false;
+            
+        if (state.internationalFilter) {
+          const isInternational = state.filteredKeywords.some(keyword => 
+            displayName.includes(keyword.toLowerCase()) || 
+            (c.name && c.name.toLowerCase().includes(keyword.toLowerCase()))
+          );
+          if (isInternational) return false;
+        }
         return true;
       });
 
       if (filtered.length === 0) {
-        resultsDiv.innerHTML = `<div class="no-results-container"><div class="no-results">📡 No se encontraron canales</div></div>`;
+        resultsDiv.innerHTML = `
+          <div class="no-results-container">
+            <div class="no-results">
+              <div class="no-results-icon">📡</div>
+              <div class="no-results-text">No se encontraron canales</div>
+              <div class="no-results-hint">Prueba con otros filtros o términos de búsqueda.</div>
+            </div>
+          </div>
+        `;
         return;
       }
 
-      if (state.currentFilter === 'catalog') {
-        resultsDiv.innerHTML = `
+      const groups = {};
+      filtered.forEach(c => {
+        const key = state.currentFilter === 'catalog' ? `Catálogo Completo| |Offline` : `${c.event}|${c.time}|${c.sport}`;
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(c);
+      });
+      
+      resultsDiv.innerHTML = Object.entries(groups).map(([key, channels]) => {
+        const [event, time, sport] = key.split('|');
+        return `
           <div class="channel-group">
             <div class="channel-group__header">
-              <div class="channel-group__sport">📦 Catálogo</div>
-              <div class="channel-group__title">Todos los canales 24/7</div>
+              <div class="channel-group__sport">${getSportWithEmoji(sport)}</div>
+              <div class="channel-group__title">
+                ${time.trim() ? `<span class="channel-time ${time === 'LIVE' ? 'channel-time--live' : ''}">${adjustTime(time)}</span>` : ''}
+                ${event}
+              </div>
             </div>
-            <div class="grid-layout">
-              ${filtered.map(c => `
+            <div class="channel-group__content">
+              ${channels.map(c => `
                 <div class="channel-card" onclick='playChannel(${JSON.stringify(c)})'>
                   <div class="channel-number">CH ${c.number}</div>
                   <div class="channel-name">${getDisplayName(c)}</div>
                 </div>
               `).join('')}
             </div>
-          </div>`;
-      } else {
-        const groups = {};
-        filtered.forEach(c => {
-          const key = `${c.event}|${c.time}|${c.sport}`;
-          if (!groups[key]) groups[key] = [];
-          groups[key].push(c);
-        });
-        
-        resultsDiv.innerHTML = Object.entries(groups).map(([key, channels]) => {
-          const [event, time, sport] = key.split('|');
-          return `
-            <div class="channel-group">
-              <div class="channel-group__header">
-                <div class="channel-group__sport">${getSportWithEmoji(sport)}</div>
-                <div class="channel-group__title">
-                  ${time.trim() ? `<span class="channel-time ${time === 'LIVE' ? 'channel-time--live' : ''}">${adjustTime(time)}</span>` : ''}
-                  ${event}
-                </div>
-              </div>
-              <div class="channel-group__content">
-                ${channels.map(c => `
-                  <div class="channel-card" onclick='playChannel(${JSON.stringify(c)})'>
-                    <div class="channel-number">CH ${c.number}</div>
-                    <div class="channel-name">${getDisplayName(c)}</div>
-                  </div>
-                `).join('')}
-              </div>
-            </div>`;
-        }).join('');
-      }
+          </div>
+        `;
+      }).join('');
+    }
+
+    function translateDate(text) {
+      const dayMap = { 'Monday': 'Lunes', 'Tuesday': 'Martes', 'Wednesday': 'Miércoles', 'Thursday': 'Jueves', 'Friday': 'Viernes', 'Saturday': 'Sábado', 'Sunday': 'Domingo' };
+      const monthMap = { 'January': 'Enero', 'February': 'Febrero', 'March': 'Marzo', 'April': 'Abril', 'May': 'Mayo', 'June': 'Junio', 'July': 'Julio', 'August': 'Agosto', 'September': 'Septiembre', 'October': 'Octubre', 'November': 'Noviembre', 'December': 'Diciembre' };
+      let translated = text;
+      Object.keys(dayMap).forEach(en => translated = translated.replace(new RegExp(en, 'g'), dayMap[en]));
+      Object.keys(monthMap).forEach(en => translated = translated.replace(new RegExp(en, 'g'), monthMap[en]));
+      return translated.replace('Schedule for', 'Programación para');
     }
 
     async function scrape() {
       try {
         const html = await fetchWithFallback("https://daddylives.top/match-schedule/");
+        const currentHash = hashCode(html);
         const doc = new DOMParser().parseFromString(html, "text/html");
+        
         const fechaElemento = doc.querySelector(".daddy-schedule-title");
-        if (fechaElemento) document.getElementById('fecha').textContent = fechaElemento.textContent.split('–')[0].trim();
+        if (fechaElemento) {
+          const rawDate = fechaElemento.textContent.split('–')[0].trim();
+          document.getElementById('fecha').textContent = translateDate(rawDate);
+        }
 
-        const found = [];
-        doc.querySelectorAll(".match-category").forEach(cat => {
-          let sport = cat.querySelector(".category-title")?.textContent.trim().replace(/\s*\(\d+\)/g, '');
-          cat.querySelectorAll(".match-section").forEach(sec => {
-            const time = sec.querySelector(".time")?.textContent.trim();
-            const event = sec.querySelector(".match-name")?.textContent.trim();
-            sec.querySelectorAll(".link-button").forEach(link => {
-              const channelName = link.textContent.trim();
-              const match = channelName.match(/CH-(\d+)/i);
-              if (match && !channelName.toUpperCase().includes("4K")) {
-                found.push({ number: match[1], name: channelName, time, event, sport });
-              }
+        if (state.lastHtmlHash !== currentHash || state.channels.length === 0) {
+          const found = [];
+          doc.querySelectorAll(".match-category").forEach(cat => {
+            let sport = cat.querySelector(".category-title")?.textContent.trim().replace(/\s*\(\d+\)/g, '');
+            cat.querySelectorAll(".match-section").forEach(sec => {
+              const time = sec.querySelector(".time")?.textContent.trim();
+              const event = sec.querySelector(".match-name")?.textContent.trim();
+              sec.querySelectorAll(".link-button").forEach(link => {
+                const linkText = link.textContent.trim();
+                if (linkText.toUpperCase() === "CH-4K" || linkText.toUpperCase() === "CH-HD") return; 
+                const match = linkText.match(/CH-(\d+)/i);
+                if (match) {
+                  found.push({ number: match[1], name: linkText, time, event, sport });
+                }
+              });
             });
           });
-        });
-        if (found.length > 0) {
-          state.channels = found;
-          localStorage.setItem('channelsCache', JSON.stringify(found));
+          if (found.length > 0) {
+            state.channels = found;
+            state.lastHtmlHash = currentHash;
+            localStorage.setItem('channelsCache', JSON.stringify(found));
+            localStorage.setItem('lastHtmlHash', currentHash);
+          }
         }
         renderResults();
-      } catch (e) { document.getElementById('fecha').textContent = "Error de conexión"; }
-      finally { setAppReady(); }
+      } catch (e) { 
+        document.getElementById('fecha').textContent = "Error al conectar con la fuente"; 
+      } finally {
+        setAppReady();
+      }
     }
 
     document.getElementById('searchInput').oninput = (e) => {
       state.searchTerm = e.target.value.trim();
       renderResults();
+      clearTimeout(state.searchTimeout);
+      if (/^\d+$/.test(state.searchTerm)) {
+        state.searchTimeout = setTimeout(() => {
+          let target = state.channels.find(c => c.number === state.searchTerm);
+          if (!target) target = { number: state.searchTerm, name: state.autoNamesMap[state.searchTerm] || `Canal ${state.searchTerm}`, event: 'Canal directo', sport: 'TV', time: '' };
+          playChannel(target);
+        }, 800);
+      }
     };
 
     document.querySelectorAll('.color-option').forEach(btn => {
-      btn.addEventListener('click', () => changeThemeColor(btn.getAttribute('data-color')));
+        btn.addEventListener('click', () => {
+            changeThemeColor(btn.getAttribute('data-color'));
+        });
     });
 
     document.getElementById('syncAutoNamesBtn').onclick = syncAutoNames;
@@ -736,9 +879,34 @@
       playChannel(state.currentChannel);
       renderResults();
     };
-    
+    document.getElementById('clearFiltersBtn').onclick = () => {
+      state.searchTerm = ''; state.sportFilter = null;
+      document.getElementById('searchInput').value = '';
+      document.getElementById('filterAll').click();
+    };
     document.getElementById('openSettingsBtn').onclick = () => document.getElementById('settingsModal').classList.add('modal--active');
     document.getElementById('closeSettingsBtn').onclick = () => document.getElementById('settingsModal').classList.remove('modal--active');
+    
+    document.getElementById('darkModeToggle').checked = state.darkMode;
+    document.getElementById('darkModeToggle').onchange = (e) => {
+      state.darkMode = e.target.checked;
+      localStorage.setItem('darkMode', state.darkMode);
+      document.body.classList.toggle('dark-mode', state.darkMode);
+    };
+
+    document.getElementById('internationalFilterToggle').checked = state.internationalFilter;
+    document.getElementById('internationalFilterToggle').onchange = (e) => {
+      state.internationalFilter = e.target.checked;
+      localStorage.setItem('internationalFilter', state.internationalFilter);
+      renderResults();
+    };
+
+    document.getElementById('baseDomainSelect').value = state.baseDomain;
+    document.getElementById('baseDomainSelect').onchange = (e) => {
+      state.baseDomain = e.target.value;
+      localStorage.setItem('baseDomain', state.baseDomain);
+    };
+
     document.getElementById('closePlayerBtn').onclick = () => {
       document.getElementById('playerContainer').classList.remove('player-container--active');
       document.getElementById('playerControls').classList.remove('player-controls--active');
@@ -757,8 +925,10 @@
     document.getElementById('filterFavorites').onclick = () => { state.currentFilter = 'favorites'; setActiveNav('filterFavorites'); renderResults(); };
     document.getElementById('filterCatalog').onclick = () => { state.currentFilter = 'catalog'; state.sportFilter = null; setActiveNav('filterCatalog'); renderResults(); };
 
+    // INICIALIZACIÓN
     if(state.darkMode) document.body.classList.add('dark-mode');
     changeThemeColor(state.primaryColor);
+    renderResults(); 
     if (Object.keys(state.autoNamesMap).length === 0) syncAutoNames();
     scrape();
   </script>
