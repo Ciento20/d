@@ -210,7 +210,7 @@
     .sidebar:hover span { opacity: 1; pointer-events: auto; }
 
     .filter-button:hover { background: var(--primary-light); color: var(--text); }
-    .filter-button--active { background: var(--primary) !important; color: white !important; }
+    .filter-button--active { background: var(--primary) !important; color: white !important; border-radius: 50px; margin: 8px; height: calc(100% - 16px) !important; padding: 0 20px !important; box-shadow: 0 4px 10px var(--primary-light); }
 
     /* BUSCADOR */
     .search-container {
@@ -406,8 +406,8 @@
         padding: 0;
       }
       .sidebar:hover { width: 100%; }
-      .nav-group { flex-direction: row; justify-content: space-around; padding: 0; height: 100%; gap: 0; }
-      .filter-button { justify-content: center; padding: 0; height: 100%; font-size: 1.4rem; gap: 0; }
+      .nav-group { flex-direction: row; justify-content: space-around; padding: 0 10px; height: 100%; gap: 5px; align-items: center; }
+      .filter-button { justify-content: center; padding: 0; height: 100%; font-size: 1.4rem; gap: 0; display: flex; align-items: center; border-radius: 50px; transition: all 0.3s ease; }
       .main-content { margin-left: 0; margin-bottom: 80px; padding: 1rem; }
       .sidebar span { display: none !important; }
       .search-container { max-width: 100%; }
@@ -694,13 +694,22 @@
         }
         playChannel(nextChannel);
       }
-    }
-
-    function updateDynamicFilters() {
+    }    function updateDynamicFilters() {
       const filterContainer = document.getElementById('dynamicFilters');
       if (!state.channels.length) return;
-      const sports = [...new Set(state.channels.map(c => c.sport).filter(Boolean))].sort();
-      filterContainer.innerHTML = sports.map(sport => {
+      const sports = [...new Set(state.channels.map(c => c.sport).filter(Boolean))].sort();      const favChip = `
+        <button class="filter-chip ${state.currentFilter === 'favorites' ? 'filter-chip--active' : ''}" 
+                onclick="document.getElementById('filterFavorites').click()">
+          <span>⭐</span> Favoritos
+        </button>`;
+
+      const liveChip = `
+        <button class="filter-chip ${state.currentFilter === 'live' ? 'filter-chip--active' : ''}" 
+                onclick="document.getElementById('filterLive').click()">
+          <span>🔴</span> Directo
+        </button>`;
+
+      filterContainer.innerHTML = favChip + liveChip + sports.map(sport => {
         const emoji = getEmojiOnly(sport);
         const isActive = state.sportFilter === sport;
         return `
