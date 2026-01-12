@@ -110,7 +110,7 @@
     .main-content {
       flex: 1;
       margin-left: 80px;
-      padding: 1rem 2rem;
+      padding: 0.5rem 2rem;
       width: calc(100% - 80px);
       display: flex;
       flex-direction: column;
@@ -121,7 +121,7 @@
       display: flex;
       gap: 10px;
       overflow-x: auto;
-      padding: 10px 0 20px 0;
+      padding: 10px 0 5px 0;
       scrollbar-width: none;
     }
     .dynamic-filters::-webkit-scrollbar { display: none; }
@@ -259,8 +259,10 @@
     }
 
     /* CARRUSELES */
-    .channel-group { margin-bottom: 2.5rem; }
-    .channel-group__header { margin-bottom: 1rem; padding-left: 0.5rem; }
+    .channel-group { margin-bottom: 1.2rem; }
+    #fechaContainer { margin: 0; }
+    #fecha { margin-top: 5px; margin-bottom: 10px; }
+    .channel-group__header { margin-bottom: 0.5rem; padding-left: 0.5rem; }
     .channel-group__title { font-size: 1.2rem; font-weight: bold; display: flex; align-items: center; gap: 10px; }
     .channel-group__sport { color: var(--primary); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
 
@@ -270,6 +272,15 @@
       gap: 1.2rem;
       padding: 1rem 0.5rem;
       scrollbar-width: none;
+    }
+
+    /* Vista de cuadrícula para el catálogo */
+    .catalog-grid {
+      display: grid !important;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 1.5rem;
+      overflow-x: visible !important;
+      padding: 1rem 0.5rem;
     }
     .channel-group__content::-webkit-scrollbar { display: none; }
 
@@ -499,8 +510,8 @@
       lastHtmlHash: localStorage.getItem('lastHtmlHash') || null,
       autoNamesMap: JSON.parse(localStorage.getItem('autoNamesMap')) || {},
       currentChannel: null,
-      currentFilter: 'all',
-      sportFilter: null,
+      currentFilter: localStorage.getItem('lastFilter') || 'all',
+      sportFilter: localStorage.getItem('lastSportFilter') || null,
       searchTerm: '',
       favorites: JSON.parse(localStorage.getItem('favorites')) || [],
       customNames: JSON.parse(localStorage.getItem('customNames')) || {},
@@ -701,6 +712,8 @@
         document.querySelectorAll('.filter-button').forEach(b => b.classList.remove('filter-button--active'));
         document.getElementById('filterAll').classList.add('filter-button--active');
       }
+      localStorage.setItem('lastSportFilter', state.sportFilter || '');
+      localStorage.setItem('lastFilter', state.currentFilter);
       renderResults();
     }
 
@@ -773,6 +786,7 @@
       
       resultsDiv.innerHTML = Object.entries(groups).map(([key, channels]) => {
         const [event, time, sport] = key.split('|');
+        const isCatalog = state.currentFilter === 'catalog';
         return `
           <div class="channel-group">
             <div class="channel-group__header">
@@ -782,9 +796,9 @@
                 ${event}
               </div>
             </div>
-            <div class="channel-group__content">
+            <div class="channel-group__content ${isCatalog ? 'catalog-grid' : ''}">
               ${channels.map(c => `
-                <div class="channel-card" onclick='playChannel(${JSON.stringify(c)})'>
+                <div class="channel-card" style="${isCatalog ? 'min-width: unset;' : ''}" onclick='playChannel(${JSON.stringify(c)})'>
                   <div class="channel-number">CH ${c.number}</div>
                   <div class="channel-name">${getDisplayName(c)}</div>
                 </div>
@@ -917,19 +931,30 @@
     const navButtons = document.querySelectorAll('.nav-group .filter-button');
     function setActiveNav(btnId) {
         navButtons.forEach(b => b.classList.remove('filter-button--active'));
-        document.getElementById(btnId).classList.add('filter-button--active');
+        const target = document.getElementById(btnId);
+        if (target) target.classList.add('filter-button--active');
     }
 
-    document.getElementById('filterAll').onclick = () => { state.currentFilter = 'all'; state.sportFilter = null; setActiveNav('filterAll'); renderResults(); };
-    document.getElementById('filterLive').onclick = () => { state.currentFilter = 'live'; setActiveNav('filterLive'); renderResults(); };
-    document.getElementById('filterFavorites').onclick = () => { state.currentFilter = 'favorites'; setActiveNav('filterFavorites'); renderResults(); };
-    document.getElementById('filterCatalog').onclick = () => { state.currentFilter = 'catalog'; state.sportFilter = null; setActiveNav('filterCatalog'); renderResults(); };
+    function updateNavState(filter) {
+      const map = { 'all': 'filterAll', 'live': 'filterLive', 'favorites': 'filterFavorites', 'catalog': 'filterCatalog' };
+      setActiveNav(map[filter]);
+      localStorage.setItem('lastFilter', filter);
+      if (filter !== 'all') {
+        state.sportFilter = null;
+        localStorage.removeItem('lastSportFilter');
+      }
+    }
+
+    document.getElementById('filterAll').onclick = () => { state.currentFilter = 'all'; state.sportFilter = null; localStorage.removeItem('lastSportFilter'); updateNavState('all'); renderResults(); };
+    document.getElementById('filterLive').onclick = () => { state.currentFilter = 'live'; updateNavState('live'); renderResults(); };
+    document.getElementById('filterFavorites').onclick = () => { state.currentFilter = 'favorites'; updateNavState('favorites'); renderResults(); };
+    document.getElementById('filterCatalog').onclick = () => { state.currentFilter = 'catalog'; updateNavState('catalog'); renderResults(); };
 
     // INICIALIZACIÓN
     if(state.darkMode) document.body.classList.add('dark-mode');
     changeThemeColor(state.primaryColor);
-    renderResults(); 
-    if (Object.keys(state.autoNamesMap).length === 0) syncAutoNames();
+    updateNavState(state.currentFilter);
+    renderResults(); if (Object.keys(state.autoNamesMap).length === 0) syncAutoNames();
     scrape();
   </script>
 </body>
