@@ -210,7 +210,8 @@
     .sidebar:hover span { opacity: 1; pointer-events: auto; }
 
     .filter-button:hover { background: var(--primary-light); color: var(--text); }
-    .filter-button--active { background: var(--primary) !important; color: white !important; border-radius: 50px; margin: 8px; height: calc(100% - 16px) !important; padding: 0 20px !important; box-shadow: 0 4px 10px var(--primary-light); }
+    .filter-button--active:hover { background: var(--primary-dark) !important; color: white !important; }
+    .filter-button--active { background: var(--primary) !important; color: white !important; font-weight: bold; border-radius: var(--radius-sm); box-shadow: 0 4px 12px var(--primary-light); }
 
     /* BUSCADOR */
     .search-container {
