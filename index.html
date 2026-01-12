@@ -262,9 +262,18 @@
     .channel-group { margin-bottom: 1.2rem; }
     #fechaContainer { margin: 0; }
     #fecha { margin-top: 5px; margin-bottom: 10px; }
-    .channel-group__header { margin-bottom: 0.5rem; padding-left: 0.5rem; }
-    .channel-group__title { font-size: 1.2rem; font-weight: bold; display: flex; align-items: center; gap: 10px; }
-    .channel-group__sport { color: var(--primary); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+    .channel-group__header { margin-bottom: 0.5rem; padding-left: 0.5rem; }    .channel-group__title { font-size: 1.2rem; font-weight: bold; display: flex; align-items: center; gap: 10px; }
+
+    .tv-group-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #e0e0e0;
+      border-left: 2px solid var(--primary); 
+      padding-left: 7.5px;
+      width: 100%;
+      margin-top: 0;
+    }
+    .channel-group__sport { color: var(--primary); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
 
     .channel-group__content {
       display: flex;
@@ -303,7 +312,7 @@
 
     .channel-name { font-weight: 700; text-align: center; margin: 8px 0; font-size: 0.95rem; }
     .channel-number { font-size: 0.7rem; color: var(--primary); font-weight: bold; text-align: center; }
-    .channel-time { font-size: 0.8rem; color: var(--text-dim); text-align: center; }
+    .channel-time { font-size: 0.95rem; color: var(--text-dim); text-align: center; }
     .channel-time--live::before {
       content: ""; display: inline-block; width: 8px; height: 8px;
       background: #ff0000; border-radius: 50%; margin-right: 6px;
@@ -608,7 +617,7 @@
       if (!sportName) return "📺 TV";
       const upperSport = sportName.toUpperCase();
       for (const [key, emoji] of Object.entries(state.sportEmojis)) {
-        if (upperSport.includes(key)) return `${sportName} ${emoji}`;
+        if (upperSport.includes(key)) return `${emoji} ${sportName}`;
       }
       return sportName;
     }
@@ -793,7 +802,7 @@
               <div class="channel-group__sport">${getSportWithEmoji(sport)}</div>
               <div class="channel-group__title">
                 ${time.trim() ? `<span class="channel-time ${time === 'LIVE' ? 'channel-time--live' : ''}">${adjustTime(time)}</span>` : ''}
-                ${event}
+                <div class="tv-group-title">${event}</div>
               </div>
             </div>
             <div class="channel-group__content ${isCatalog ? 'catalog-grid' : ''}">
