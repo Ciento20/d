@@ -23,11 +23,7 @@
       --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
     }
     
-    body.dark-mode {
-      --bg-dark: #0f0f0f;
-      --card-bg: #1a1a1a;
-      --text: #f8fafc;
-    }
+    
 
     body {
       background: var(--bg-dark);
@@ -165,6 +161,14 @@
       justify-content: center;
       gap: 15px;
       position: relative;
+      min-height: 50px;
+    }
+
+    #channelInfo {
+      position: absolute;
+      left: 1.5rem;
+      color: var(--primary);
+      font-weight: bold;
     }
 
     .player-controls--active { display: flex; }
@@ -436,11 +440,12 @@
           <iframe id="videoFrame" allowfullscreen></iframe>
         </div>
         <div class="player-controls" id="playerControls">
-          <span id="channelInfo" style="color: var(--primary); font-weight: bold;"></span>
+          <span id="channelInfo"></span>
           <button class="filter-button" id="prevChannelBtn" style="width: auto;">◄</button>
           <button class="filter-button" id="nextChannelBtn" style="width: auto;">►</button>
           <button class="filter-button" id="favoriteBtn" style="width: auto;">★</button>
           <button class="filter-button" id="closePlayerBtn" style="width: auto;">×</button>
+          <span id="channelNumberDisplay" style="position: absolute; right: 1.5rem; font-weight: bold; color: var(--text-dim); background: var(--sidebar-bg); padding: 5px 10px; border-radius: var(--radius-sm); border: 1px solid var(--border-color);"></span>
         </div>
       </div>
 
@@ -467,13 +472,7 @@
         </div>
       </div>
 
-      <div class="settings-item">
-        <span>Modo Oscuro</span>
-        <label class="settings-switch">
-          <input type="checkbox" id="darkModeToggle">
-          <span class="settings-slider"></span>
-        </label>
-      </div>
+      
 
       <div class="settings-item">
         <span>Filtrar Internacional</span>
@@ -513,7 +512,7 @@
       customNames: JSON.parse(localStorage.getItem('customNames')) || {},
       baseDomain: localStorage.getItem('baseDomain') || 'daddylives.top/watch.php?id=',
       internationalFilter: localStorage.getItem('internationalFilter') === 'true',
-      darkMode: localStorage.getItem('darkMode') !== 'false',
+      darkMode: false,
       primaryColor: localStorage.getItem('miWeb_color') || '#2563eb',
       filteredKeywords: [
         "Cricket", "Russia", "Golf", "PL", "NZ", "BR", "Morocco", "Malaysia", "Arabic", "Astro", "Willow", "SuperSport", "Star Sports", "Sony Ten",
@@ -642,6 +641,7 @@
       document.getElementById('playerContainer').classList.add('player-container--active');
       document.getElementById('playerControls').classList.add('player-controls--active');
       document.getElementById('channelInfo').textContent = getDisplayName(channel);
+      document.getElementById('channelNumberDisplay').textContent = `CH ${channel.number}`;
       
       const favBtn = document.getElementById('favoriteBtn');
       favBtn.textContent = state.favorites.includes(channel.number) ? '★' : '☆';
@@ -926,12 +926,7 @@
     document.getElementById('openSettingsBtn').onclick = () => document.getElementById('settingsModal').classList.add('modal--active');
     document.getElementById('closeSettingsBtn').onclick = () => document.getElementById('settingsModal').classList.remove('modal--active');
     
-    document.getElementById('darkModeToggle').checked = state.darkMode;
-    document.getElementById('darkModeToggle').onchange = (e) => {
-      state.darkMode = e.target.checked;
-      localStorage.setItem('darkMode', state.darkMode);
-      document.body.classList.toggle('dark-mode', state.darkMode);
-    };
+    
 
     document.getElementById('internationalFilterToggle').checked = state.internationalFilter;
     document.getElementById('internationalFilterToggle').onchange = (e) => {
@@ -951,6 +946,7 @@
       document.getElementById('playerControls').classList.remove('player-controls--active');
       document.getElementById('videoFrame').src = '';
       state.currentChannel = null;
+      document.getElementById('channelNumberDisplay').textContent = '';
     };
 
     const navButtons = document.querySelectorAll('.nav-group .filter-button');
@@ -979,7 +975,7 @@
     document.getElementById('filterCatalog').onclick = () => { state.currentFilter = 'catalog'; updateNavState('catalog'); renderResults(); };
 
     // INICIALIZACIÓN
-    if(state.darkMode) document.body.classList.add('dark-mode');
+    
     changeThemeColor(state.primaryColor);
     updateNavState(state.currentFilter);
     renderResults(); if (Object.keys(state.autoNamesMap).length === 0) syncAutoNames();
