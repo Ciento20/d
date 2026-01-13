@@ -686,7 +686,15 @@
     }    function updateDynamicFilters() {
       const filterContainer = document.getElementById('dynamicFilters');
       if (!state.channels.length) return;
-      const sports = [...new Set(state.channels.map(c => c.sport).filter(Boolean))].sort();      const favChip = `
+      const sportsRaw = [...new Set(state.channels.map(c => c.sport).filter(Boolean))].sort();
+      const emojiGroups = {};
+      sportsRaw.forEach(sport => {
+        const emoji = getEmojiOnly(sport);
+        if (!emojiGroups[emoji]) {
+          emojiGroups[emoji] = sport.includes(' ') ? sport.split(' ')[0] + ' ' + sport.split(' ')[1] : sport;
+        }
+      });
+      const sports = Object.values(emojiGroups).sort();      const favChip = `
         <button class="filter-chip ${state.activeFilters.favorites ? 'filter-chip--active' : ''}" 
                 onclick="toggleMainFilter('favorites')">
           <span>⭐</span> Favoritos
@@ -758,7 +766,11 @@
         const displayName = getDisplayName(c).toLowerCase();
         const eventName = (c.event || "").toLowerCase();
         
-        if (state.sportFilters.length > 0 && !state.sportFilters.includes(c.sport)) return false;
+        if (state.sportFilters.length > 0) {
+          const channelEmoji = getEmojiOnly(c.sport);
+          const hasMatch = state.sportFilters.some(filter => getEmojiOnly(filter) === channelEmoji);
+          if (!hasMatch) return false;
+        }
         if (state.activeFilters.favorites && !state.favorites.includes(c.number)) return false;
         if (state.activeFilters.live && !isChannelLive(c)) return false;
         
