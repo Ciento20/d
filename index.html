@@ -154,14 +154,69 @@
     #videoFrame { width: 100%; height: 100%; border: none; }
 
     .player-controls {
-      background: var(--card-bg);
-      padding: 1rem;
+      background: #050505;
+      padding: 1.2rem;
       display: none;
       align-items: center;
       justify-content: center;
-      gap: 15px;
+      gap: 12px;
       position: relative;
-      min-height: 50px;
+      min-height: 70px;
+      border-top: 2px solid var(--border-color);
+      box-shadow: inset 0 10px 20px rgba(0,0,0,0.5);
+    }
+
+    .player-controls .filter-button {
+      width: 50px !important;
+      height: 45px !important;
+      border-radius: 8px !important;
+      background: linear-gradient(145deg, #1e1e1e, #141414);
+      border: 1px solid rgba(255,255,255,0.05);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      color: var(--text-dim);
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      cursor: pointer;
+      box-shadow: 0 4px 0px #000, 0 8px 15px rgba(0,0,0,0.4);
+    }
+
+    .player-controls .filter-button:hover {
+      transform: translateY(-2px);
+      color: var(--primary);
+      border-color: var(--primary);
+      box-shadow: 0 6px 0px #000, 0 12px 20px rgba(var(--primary-rgb), 0.2);
+    }
+
+    .player-controls .filter-button:active {
+      transform: translateY(2px);
+      box-shadow: 0 0px 0px #000;
+    }
+
+    #closePlayerBtn {
+      margin-left: 20px;
+      font-weight: 300;
+    }
+
+    #closePlayerBtn:hover {
+      color: #ef4444 !important;
+      border-color: #ef4444 !important;
+      box-shadow: 0 6px 0px #000, 0 12px 20px rgba(239, 68, 68, 0.2) !important;
+    }
+
+    #channelNumberDisplay {
+      position: absolute;
+      right: 2rem;
+      font-family: 'Courier New', monospace;
+      font-weight: 700;
+      color: var(--primary);
+      background: #111;
+      padding: 8px 16px;
+      border-radius: 6px;
+      border: 1px solid #333;
+      box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+      text-shadow: 0 0 5px var(--primary);
     }
 
     #channelInfo {
@@ -441,10 +496,10 @@
         </div>
         <div class="player-controls" id="playerControls">
           <span id="channelInfo"></span>
-          <button class="filter-button" id="prevChannelBtn" style="width: auto;">◄</button>
-          <button class="filter-button" id="nextChannelBtn" style="width: auto;">►</button>
-          <button class="filter-button" id="favoriteBtn" style="width: auto;">★</button>
-          <button class="filter-button" id="closePlayerBtn" style="width: auto;">×</button>
+          <button class="filter-button" id="prevChannelBtn">←</button>
+          <button class="filter-button" id="nextChannelBtn">→</button>
+          <button class="filter-button" id="favoriteBtn">★</button>
+          <button class="filter-button" id="closePlayerBtn">✕</button>
           <span id="channelNumberDisplay" style="position: absolute; right: 1.5rem; font-weight: bold; color: var(--text-dim); background: var(--sidebar-bg); padding: 5px 10px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); cursor: pointer;" title="Click para cambiar fuente"></span>
         </div>
       </div>
@@ -526,6 +581,9 @@
         "BASKETBALL": "🏀", "WWE": "🤼‍♂️", "GOLF": "⛳", "HORSE RACING": "🏇", "ICE HOCKEY": "🏒",
         "NHL": "🏒", "SNOOKER": "🎱", "WATER POLO": "🤽"
       },
+      mapaLogos: {},
+      gistLogosUrl: 'https://gist.githubusercontent.com/Ciento20/f7847e86d06e5011706fa76f2dab90be/raw',
+      imageProxy: 'https://images.weserv.nl/?url=',
       proxies: [
         "https://api.allorigins.win/raw?url=",
         "https://api.codetabs.com/v1/proxy/?quest=",
@@ -579,6 +637,27 @@
         }
       }
       throw new Error('Todos los proxies fallaron');
+    }
+
+    async function cargarLogosGist() {
+      try {
+        const response = await fetch(state.gistLogosUrl);
+        const text = await response.text();
+        const lineas = text.split('\n');
+        lineas.forEach(linea => {
+          // Dividir solo en el primer ": " para no romper URLs con parámetros
+          const index = linea.indexOf(': ');
+          if (index !== -1) {
+            const nombre = linea.substring(0, index).trim().toUpperCase();
+            let url = linea.substring(index + 2).trim();
+            
+            // Limpieza básica de nombres para mejorar coincidencia
+            const nombreLimpio = nombre.replace(/ SPAIN$/i, '').replace(/ ES$/i, '').trim();
+            state.mapaLogos[nombreLimpio] = url;
+          }
+        });
+        console.log("Logos del Gist cargados");
+      } catch (e) { console.error("Error cargando logos:", e); }
     }
 
     async function syncAutoNames() {
@@ -837,6 +916,17 @@
               ${channels.map(c => `
                 <div class="channel-card" style="${isCatalog ? 'min-width: unset;' : ''}" onclick='playChannel(${JSON.stringify(c)})'>
                   <div class="channel-number">CH ${c.number}</div>
+                  
+                  <div class="channel-logo-container" style="height: 50px; display: flex; justify-content: center; align-items: center; margin-bottom: 10px;">
+                    ${(() => {
+                        const name = getDisplayName(c).toUpperCase().replace(/ SPAIN$/i, '').replace(/ ES$/i, '').trim();
+                        const logoUrl = state.mapaLogos[name];
+                        if (logoUrl) {
+                          return `<img src="${state.imageProxy}${encodeURIComponent(logoUrl)}" style="max-height: 100%; max-width: 80%; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));">`;
+                        }
+                        return `<div class="channel-number" style="font-size: 1.5rem; opacity: 0.3;">CH ${c.number}</div>`;
+                      })()}
+                  </div>
                   <div class="channel-name">${getDisplayName(c)}</div>
                 </div>
               `).join('')}
@@ -1000,7 +1090,9 @@
     
     changeThemeColor(state.primaryColor);
     updateNavState(state.currentFilter);
-    renderResults(); if (Object.keys(state.autoNamesMap).length === 0) syncAutoNames();
+    renderResults(); 
+    cargarLogosGist();
+    if (Object.keys(state.autoNamesMap).length === 0) syncAutoNames();
     scrape();
   </script>
 </body>
