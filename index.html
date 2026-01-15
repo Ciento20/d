@@ -445,7 +445,7 @@
           <button class="filter-button" id="nextChannelBtn" style="width: auto;">►</button>
           <button class="filter-button" id="favoriteBtn" style="width: auto;">★</button>
           <button class="filter-button" id="closePlayerBtn" style="width: auto;">×</button>
-          <span id="channelNumberDisplay" style="position: absolute; right: 1.5rem; font-weight: bold; color: var(--text-dim); background: var(--sidebar-bg); padding: 5px 10px; border-radius: var(--radius-sm); border: 1px solid var(--border-color);"></span>
+          <span id="channelNumberDisplay" style="position: absolute; right: 1.5rem; font-weight: bold; color: var(--text-dim); background: var(--sidebar-bg); padding: 5px 10px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); cursor: pointer;" title="Click para cambiar fuente"></span>
         </div>
       </div>
 
@@ -951,6 +951,16 @@
     document.getElementById('baseDomainSelect').onchange = (e) => {
       state.baseDomain = e.target.value;
       localStorage.setItem('baseDomain', state.baseDomain);
+    };
+
+    document.getElementById('channelNumberDisplay').onclick = () => {
+      const selectEl = document.getElementById('baseDomainSelect');
+      const currentIndex = selectEl.selectedIndex;
+      const nextIndex = (currentIndex + 1) % selectEl.options.length;
+      selectEl.selectedIndex = nextIndex;
+      state.baseDomain = selectEl.value;
+      localStorage.setItem('baseDomain', state.baseDomain);
+      if (state.currentChannel) playChannel(state.currentChannel);
     };
 
     document.getElementById('closePlayerBtn').onclick = () => {
