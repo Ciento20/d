@@ -35,7 +35,10 @@
             TARGET_URL: 'https://dlstreams.top/',
             GIST_LOGOS: 'https://gist.githubusercontent.com/Ciento20/f7847e86d06e5011706fa76f2dab90be/raw/',
             PROXIES: [
-                'https://corsproxy.io/?'
+                'https://corsproxy.io/?',
+                'https://api.allorigins.win/raw?url=',
+                'https://api.codetabs.com/v1/proxy/?quest=',
+                'https://thingproxy.freeboard.io/fetch/'
             ]
         };
 
@@ -361,8 +364,7 @@
                 const events = doc.querySelectorAll('.schedule__event');
                 const results = [];
                 const now = new Date();
-                const currentFecha = `HOY <span class="date-number">${now.getDate()}</span> DE <span class="date-number">${now.getMonth() + 1}</span>`;                events.forEach(event => {
-                    const title = event.querySelector('.schedule__eventTitle')?.innerText.trim() || 'Evento';
+                const currentFecha = `HOY <span class="date-number">${now.getDate()}</span> DE <span class="date-number">${now.getMonth() + 1}</span>`;                events.forEach(event => {                    const rawTitle = event.querySelector('.schedule__eventTitle')?.innerText.trim() || 'Evento';
                     const hora = event.querySelector('.schedule__time')?.innerText.trim() || '--:--';
                     const links = event.querySelectorAll('.schedule__channels a');
                     const canales = [];
@@ -374,11 +376,40 @@
                         }
                     });
 
+                    let competition = rawTitle;
+                    let match = rawTitle;
+                    let emoji = '📺';
+                    
+                    const upper = rawTitle.toUpperCase();
+                    if (upper.includes('LEAGUE') || upper.includes('FC ') || upper.includes(' VS ') || upper.includes('FÚTBOL') || upper.includes('SOCCER') || upper.includes('CHAMPIONS') || upper.includes('LIGA')) emoji = '⚽';
+                    else if (upper.includes('NBA') || upper.includes('BASKET')) emoji = '🏀';
+                    else if (upper.includes('ATP') || upper.includes('WTA') || upper.includes('TENNIS') || upper.includes('TENIS')) emoji = '🎾';
+                    else if (upper.includes('F1') || upper.includes('FORMULA 1') || upper.includes('GP')) emoji = '🏎️';
+                    else if (upper.includes('NFL')) emoji = '🏈';
+                    else if (upper.includes('NHL')) emoji = '🏒';
+                    else if (upper.includes('MLB')) emoji = '⚾';
+                    else if (upper.includes('MOTOGP') || upper.includes('MOTO2') || upper.includes('MOTO3')) emoji = '🏍️';
+                    else if (upper.includes('UFC') || upper.includes('WWE') || upper.includes('BOXING') || upper.includes('BOXEO')) emoji = '🥊';
+
+                    if (rawTitle.includes(':')) {
+                        const idx = rawTitle.indexOf(':');
+                        competition = rawTitle.substring(0, idx).trim();
+                        match = rawTitle.substring(idx + 1).trim();
+                    } else if (rawTitle.includes(' - ')) {
+                        const parts = rawTitle.split(' - ');
+                        competition = parts[0].trim();
+                        match = parts.slice(1).join(' - ').trim();
+                    } else if (rawTitle.includes(',')) {
+                        const idx = rawTitle.indexOf(',');
+                        competition = rawTitle.substring(0, idx).trim();
+                        match = rawTitle.substring(idx + 1).trim();
+                    }
+
                     results.push({
                         fecha: currentFecha,
                         hora,
-                        competition: '📺 ' + title,
-                        infoHtml: `<div class="vs-container"><span>${title}</span></div>`,
+                        competition: `${emoji} ${competition}`,
+                        infoHtml: `<div class="vs-container"><span>${match}</span></div>`,
                         canales
                     });
                 });
@@ -904,10 +935,14 @@
                 // Sincronización manejada por el Master Clock al final del script
                 UIManager.status.style.display = 'none';
                 document.body.classList.add('loading-finished');} catch (err) {
+                console.error("Error en carga inicial:", err);
                 document.body.classList.add('loading-finished');
-                if (globalData.length === 0) {
+                if (globalData && globalData.length > 0) {
+                    UIManager.refresh();
+                    UIManager.status.style.display = 'none';
+                } else {
                     UIManager.status.style.display = 'block';
-                    UIManager.status.textContent = "Error de red. Usando caché.";
+                    UIManager.status.innerHTML = "<div style='text-align:center'>⚠️ Error de conexión<br><small style='opacity:0.5'>Revisa los escudos de tu navegador</small></div>";
                 }
             }
         }        init();
