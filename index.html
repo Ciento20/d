@@ -409,7 +409,7 @@
                         fecha: currentFecha,
                         hora,
                         competition: `${emoji} ${competition}`,
-                        infoHtml: `<div class="vs-container"><span>${match}</span></div>`,
+                        infoHtml: `<div class="vs-container"><span>${match.replace(/\b(vs)\b/gi, '<span class="vs-text">VS</span>').replace(/,/g, '<span class="vs-text">,</span>')}</span></div>`,
                         canales
                     });
                 });
@@ -472,7 +472,10 @@
                     if (item.isLive !== newLiveState) stateChanged = true;
                     item.isLive = newLiveState;
                 });
-                const processed = [...globalData].sort((a, b) => (a.isLive === b.isLive) ? 0 : a.isLive ? -1 : 1);
+                const processed = [...globalData].sort((a, b) => {
+                    if (a.isLive !== b.isLive) return a.isLive ? -1 : 1;
+                    return a.hora.localeCompare(b.hora);
+                });
                 
                 if (currentTab === 'home') {
                     if (state.tvSearchTerm === '' && this.lastEventsHTML && !stateChanged) {
