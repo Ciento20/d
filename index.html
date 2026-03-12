@@ -40,10 +40,10 @@
                 <div>
                     <p class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">Categorías Pro</p>
                     <ul class="space-y-2 text-sm text-gray-400">
-                        <li><button onclick="filterSport('Soccer')" class="hover:text-white transition flex items-center"><i class="fas fa-futbol w-6"></i> Soccer / Fútbol</button></li>
-                        <li><button onclick="filterSport('NBA')" class="hover:text-white transition flex items-center"><i class="fas fa-basketball-ball w-6"></i> NBA Basketball</button></li>
-                        <li><button onclick="filterSport('NFL')" class="hover:text-white transition flex items-center"><i class="fas fa-football-ball w-6"></i> NFL Football</button></li>
-                        <li><button onclick="filterSport('NHL')" class="hover:text-white transition flex items-center"><i class="fas fa-hockey-puck w-6"></i> NHL Hockey</button></li>
+                        <li><button onclick="filterSport('Soccer')" class="hover:text-white transition flex items-center"><i class="fas fa-futbol w-6 text-green-500"></i> Soccer / Fútbol</button></li>
+                        <li><button onclick="filterSport('NBA')" class="hover:text-white transition flex items-center"><i class="fas fa-basketball-ball w-6 text-orange-500"></i> NBA Basketball</button></li>
+                        <li><button onclick="filterSport('NFL')" class="hover:text-white transition flex items-center"><i class="fas fa-football-ball w-6 text-red-600"></i> NFL Football</button></li>
+                        <li><button onclick="filterSport('NHL')" class="hover:text-white transition flex items-center"><i class="fas fa-hockey-puck w-6 text-blue-400"></i> NHL Hockey</button></li>
                     </ul>
                 </div>
             </nav>
@@ -159,11 +159,16 @@
         }
 
         function renderEventCard(ev, cat) {
-            const icons = { 'Soccer': '⚽', 'NBA': '🏀', 'NFL': '🏈', 'NHL': '🏒' };
+            const icons = { 
+                'Soccer': '<i class="fas fa-futbol text-green-500 mr-1"></i>', 
+                'NBA': '<i class="fas fa-basketball-ball text-orange-500 mr-1"></i>', 
+                'NFL': '<i class="fas fa-football-ball text-red-600 mr-1"></i>', 
+                'NHL': '<i class="fas fa-hockey-puck text-blue-400 mr-1"></i>' 
+            };
             return `
                 <div class="px-2">
                     <div class="flex items-center space-x-2 mb-1">
-                        <span class="text-[12px] text-[#00ffaa] font-medium opacity-90">${icons[cat] || '🏆'} ${ev.tournament}</span>
+                        <span class="text-[12px] text-gray-400 font-medium opacity-90">${icons[cat] || '<i class="fas fa-trophy text-yellow-500 mr-1"></i>'} ${ev.tournament}</span>
                     </div>
                     <div class="flex items-center space-x-3 mb-4">
                         <span class="text-[#00ffaa] font-bold text-sm">${ev.time}</span>
