@@ -6,21 +6,20 @@
     <title>CDN Live TV - Ultra Metadata Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; scroll-behavior: smooth; }
-        .glass { background: rgba(31, 41, 55, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
-        .event-card:hover { border-color: #3b82f6; transform: scale(1.02); }
-        .custom-scroll::-webkit-scrollbar { width: 6px; }
-        .custom-scroll::-webkit-scrollbar-track { background: #111827; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: #374151; border-radius: 10px; }
+    <style>        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; scroll-behavior: smooth; background-color: #000; }
+        .event-card { border-radius: 12px; transition: all 0.3s ease; }
         .status-live { animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .btn-ch { background: #222; border: 1px solid transparent; aspect-ratio: 16/10; display: flex; align-items: center; justify-content: center; border-radius: 12px; position: relative; transition: transform 0.1s; }
+        .btn-ch:active { transform: scale(0.95); }
+        .btn-ch img { max-height: 60%; max-width: 80%; object-fit: contain; filter: brightness(1.1); }
     </style>
 </head>
-<body class="bg-gray-950 text-gray-100 h-screen flex overflow-hidden">
+<body class="bg-black text-gray-100 min-h-screen flex flex-col">
 
-    <aside class="w-72 bg-gray-900 border-r border-gray-800 flex flex-col hidden lg:flex">
+    
+    <aside class="hidden">
         <div class="p-6">
             <div class="flex items-center space-x-3 mb-10">
                 <div class="bg-blue-600 p-2 rounded-lg">
@@ -58,22 +57,17 @@
         </div>
     </aside>
 
-    <main class="flex-1 flex flex-col overflow-hidden">
-        
-        <header class="h-20 bg-gray-900/50 flex items-center justify-between px-8 border-b border-gray-800">
-            <div class="flex-1 max-w-2xl">
-                <div class="relative">
-                    <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"></i>
-                    <input type="text" id="globalSearch" onkeyup="searchEngine()" placeholder="Buscar equipo, torneo, país o canal..." 
-                           class="w-full bg-gray-800/50 border border-gray-700 rounded-xl py-2.5 pl-12 pr-4 focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
-                </div>
-            </div>
-            <div class="flex items-center space-x-4 ml-4">
-                <span class="bg-gray-800 px-3 py-1 rounded-full text-xs font-bold border border-gray-700">PLAN: FREE</span>
+    <main class="flex-1 flex flex-col overflow-hidden">        <header class="p-5 pt-8">
+            <div class="flex flex-col space-y-5">
+                <p class="text-[10px] font-black tracking-[0.3em] text-center text-gray-500 uppercase">
+                    Eventos de hoy <span class="text-blue-500">Jueves</span> 12/03/2026
+                </p>
+                
             </div>
         </header>
 
-        <div id="main-scroll" class="flex-1 overflow-y-auto p-8 custom-scroll bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-gray-900 to-gray-950">
+        <div id="main-scroll" class="flex-1 p-4">
+            
             
             <div id="dynamic-content" class="space-y-12">
                 <div class="flex items-center justify-center h-64">
@@ -119,240 +113,119 @@
                 </div>
             </div>
         </div>
-    </div>
-
-    <script>
+    </div>    <script>
         const API_USER = 'cdnlivetv';
         const API_PLAN = 'free';
-        let store = {
-            channels: [],
-            sports: {},
-            allMetadata: []
-        };
+        let store = { channels: [], sports: {}, currentTab: 'events' };
 
-        // Inicialización Total
+        function switchTab(tab) {
+            store.currentTab = tab;
+            const tEv = document.getElementById('tab-ev');
+            const tCh = document.getElementById('tab-ch');
+            tEv.className = `flex flex-col items-center space-y-1 ${tab === 'events' ? 'text-[#00ffaa]' : 'text-gray-500'}`;
+            tCh.className = `flex flex-col items-center space-y-1 ${tab === 'channels' ? 'text-[#00ffaa]' : 'text-gray-500'}`;
+            tab === 'events' ? renderAllSports() : renderAllChannels();
+            window.scrollTo({top: 0, behavior: 'smooth'});
+        }
+
         async function init() {
             try {
                 const [chRes, spRes] = await Promise.all([
                     fetch(`https://api.cdn-live.tv/api/v1/channels/?user=${API_USER}&plan=${API_PLAN}`),
                     fetch(`https://api.cdn-live.tv/api/v1/events/sports/?user=${API_USER}&plan=${API_PLAN}`)
                 ]);
-
                 const chData = await chRes.json();
                 const spData = await spRes.json();
-
                 store.channels = chData.channels;
                 store.sports = spData['cdn-live-tv'];
-                
-                renderAllSports(); // Empezamos por deportes que tienen más metadatos
-            } catch (err) {
-                document.getElementById('dynamic-content').innerHTML = `
-                    <div class="bg-red-900/20 border border-red-500 p-8 rounded-2xl text-center">
-                        <i class="fas fa-exclamation-triangle text-4xl text-red-500 mb-4"></i>
-                        <h2 class="text-xl font-bold">Error de Conexión</h2>
-                        <p class="text-gray-400">No se pudieron recuperar los metadatos de la API.</p>
-                    </div>
-                `;
-            }
+                renderAllSports();
+            } catch (err) { console.error(err); }
         }
 
-        // Renderizado de Deportes (Full Metadata)
         function renderAllSports() {
             const container = document.getElementById('dynamic-content');
-            container.innerHTML = '<h2 class="text-3xl font-black italic uppercase tracking-tighter text-blue-500">Eventos en Vivo & Próximos</h2>';
-
-            const categories = ['Soccer', 'NBA', 'NFL', 'NHL'];
+            container.innerHTML = '<div class="space-y-8 pb-20"></div>';
+            const wrapper = container.querySelector('div');
+            const categories = Object.keys(store.sports);
             
             categories.forEach(cat => {
-                const events = store.sports[cat] || [];
-                if(events.length === 0) return;
-
-                const section = document.createElement('div');
-                section.className = "space-y-4 animate-in fade-in duration-500";
-                section.innerHTML = `
-                    <div class="flex items-center space-x-4 border-b border-gray-800 pb-2">
-                        <h3 class="text-xl font-bold">${cat}</h3>
-                        <span class="bg-blue-600/20 text-blue-400 text-[10px] font-bold px-2 py-0.5 rounded">${events.length} EVENTOS</span>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                        ${events.map(ev => renderEventCard(ev, cat)).join('')}
-                    </div>
-                `;
-                container.appendChild(section);
+                store.sports[cat].forEach(ev => {
+                    const div = document.createElement('div');
+                    div.className = "animate-in fade-in duration-500";
+                    div.innerHTML = renderEventCard(ev, cat);
+                    wrapper.appendChild(div);
+                });
             });
         }
 
-        function renderEventCard(ev, category) {
-            const isLive = ev.status === 'live';
-            const statusColor = isLive ? 'bg-red-600 text-white status-live' : 'bg-gray-700 text-gray-300';
-            
+        function renderEventCard(ev, cat) {
+            const icons = { 'Soccer': '⚽', 'NBA': '🏀', 'NFL': '🏈', 'NHL': '🏒' };
             return `
-                <div class="glass p-5 rounded-2xl event-card transition border border-gray-800 flex flex-col justify-between">
-                    <div>
-                        <div class="flex justify-between items-start mb-4">
-                            <div class="flex items-center space-x-2">
-                                <img src="${ev.countryIMG}" class="h-4 w-6 rounded-sm shadow-sm" title="${ev.country}">
-                                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">${ev.tournament}</span>
-                            </div>
-                            <span class="text-[9px] font-black px-2 py-0.5 rounded-full uppercase ${statusColor}">${ev.status}</span>
-                        </div>
-
-                        <div class="flex items-center justify-between py-4">
-                            <div class="flex flex-col items-center w-1/3 text-center">
-                                <img src="${ev.homeTeamIMG}" class="h-12 w-12 object-contain mb-2 drop-shadow-lg" onerror="this.src='https://via.placeholder.com/100?text=TEAM'">
-                                <span class="text-xs font-bold leading-tight">${ev.homeTeam}</span>
-                            </div>
-                            <div class="flex flex-col items-center">
-                                <span class="text-xs font-black text-gray-600">VS</span>
-                                <span class="text-[10px] text-gray-500 mt-1 font-mono">${ev.time}</span>
-                            </div>
-                            <div class="flex flex-col items-center w-1/3 text-center">
-                                <img src="${ev.awayTeamIMG}" class="h-12 w-12 object-contain mb-2 drop-shadow-lg" onerror="this.src='https://via.placeholder.com/100?text=TEAM'">
-                                <span class="text-xs font-bold leading-tight">${ev.awayTeam}</span>
-                            </div>
-                        </div>
+                <div class="px-2">
+                    <div class="flex items-center space-x-2 mb-1">
+                        <span class="text-[12px] text-[#00ffaa] font-medium opacity-90">${icons[cat] || '🏆'} ${ev.tournament}</span>
                     </div>
-
-                    <div class="mt-4 space-y-2">
-                        <p class="text-[9px] font-bold text-gray-500 uppercase">Señales Disponibles:</p>
+                    <div class="flex items-center space-x-3 mb-4">
+                        <span class="text-[#00ffaa] font-bold text-sm">${ev.time}</span>
+                        <span class="text-gray-800 text-xs">|</span>
+                        <div class="flex items-center space-x-2 flex-1">
+                            <img src="${ev.homeTeamIMG}" class="h-4 w-4 object-contain" onerror="this.style.display='none'">
+                            <span class="text-gray-200 text-sm">${ev.homeTeam} <span class="text-gray-500">vs</span> ${ev.awayTeam}</span>
+                            <img src="${ev.awayTeamIMG}" class="h-4 w-4 object-contain" onerror="this.style.display='none'">
+                        </div>
+                        <img src="${ev.countryIMG}" class="h-3 w-4 rounded-sm opacity-20">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
                         ${ev.channels.map(ch => `
-                            <button onclick="openPlayer('${ch.url}', '${ev.homeTeam} vs ${ev.awayTeam}', '${ch.image}', '${ch.viewers}', '${category}', '${ch.channel_code}')" 
-                                    class="w-full bg-gray-800 hover:bg-blue-600 p-2 rounded-xl flex items-center justify-between transition group">
-                                <div class="flex items-center">
-                                    <img src="${ch.image}" class="h-6 w-6 object-contain bg-white/10 rounded p-0.5 mr-3">
-                                    <div class="flex flex-col items-start">
-                                        <span class="text-[11px] font-semibold">${ch.channel_name}</span>
-                                        <span class="text-[8px] text-gray-500 group-hover:text-blue-100 uppercase font-bold">Región: ${ch.channel_code || 'INT'}</span>
-                                    </div>
-                                </div>
-                                <div class="flex items-center space-x-2">
-                                    <div class="flex flex-col items-end mr-2">
-                                        <span class="text-[9px] text-gray-400 group-hover:text-blue-100"><i class="fas fa-users mr-1"></i>${ch.viewers}</span>
-                                        <span class="text-[7px] text-green-500 font-bold uppercase tracking-tighter">● ONLINE</span>
-                                    </div>
-                                    <i class="fas fa-play-circle text-blue-500 group-hover:text-white text-lg"></i>
+                            <button onclick="openPlayer('${ch.url}', '${ev.homeTeam} vs ${ev.awayTeam}', '${ch.image}', '${ch.viewers}', '${cat}', '${ch.channel_code}')" class="btn-ch">
+                                <img src="${ch.image}">
+                                <div class="absolute bottom-1 right-2 flex items-center space-x-1 opacity-20">
+                                    <span class="text-[5px] text-white font-bold">${ch.channel_code || ''}</span>
+                                    <span class="text-[5px] text-white">${ch.viewers}</span>
                                 </div>
                             </button>
                         `).join('')}
                     </div>
-                </div>
-            `;
+                </div>`;
         }
 
-        // Renderizado de Canales (Metadata de País)
         function renderAllChannels() {
             const container = document.getElementById('dynamic-content');
-            container.innerHTML = '<h2 class="text-3xl font-black italic uppercase tracking-tighter text-blue-500 mb-6">Red Global de Canales</h2>';
-
-            // Agrupar por país usando metadatos 'code'
-            const countries = [...new Set(store.channels.map(c => c.code))];
-            
-            countries.forEach(countryCode => {
-                const countryChannels = store.channels.filter(c => c.code === countryCode);
-                const section = document.createElement('div');
-                section.className = "mb-10";
-                section.innerHTML = `
-                    <div class="flex items-center space-x-3 mb-6">
-                        <img src="https://flagcdn.com/w40/${countryCode.toLowerCase()}.png" class="h-5 rounded-sm shadow" onerror="this.style.display='none'">
-                        <h3 class="text-lg font-bold uppercase tracking-widest">${countryCode} Territory</h3>
-                        <span class="h-[1px] flex-1 bg-gray-800"></span>
-                    </div>
-                    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                        ${countryChannels.map(ch => `
-                            <div onclick="openPlayer('${ch.url}', '${ch.name}', '${ch.image}', '${ch.viewers}', 'General', '${ch.code}')" 
-                                 class="bg-gray-900 border border-gray-800 p-4 rounded-2xl cursor-pointer hover:bg-gray-800 transition group relative overflow-hidden">
-                                <div class="absolute top-2 right-2">
-                                    <span class="flex h-2 w-2">
-                                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full ${ch.status === 'online' ? 'bg-green-400' : 'bg-red-400'} opacity-75"></span>
-                                        <span class="relative inline-flex rounded-full h-2 w-2 ${ch.status === 'online' ? 'bg-green-500' : 'bg-red-500'}"></span>
-                                    </span>
-                                </div>
-                                <div class="h-16 flex items-center justify-center mb-3">
-                                    <img src="${ch.image}" class="max-h-full max-w-full object-contain group-hover:scale-110 transition duration-300">
-                                </div>
-                                <p class="text-[11px] font-bold truncate text-center mb-1">${ch.name}</p>
-                                <p class="text-[9px] text-center text-gray-500 uppercase mb-2">Territorio: ${ch.code}</p>
-                                <div class="flex items-center justify-between text-[9px] font-bold border-t border-gray-800 pt-2">
-                                    <span class="${ch.status === 'online' ? 'text-green-500' : 'text-red-500'} uppercase">${ch.status}</span>
-                                    <span class="text-gray-500"><i class="fas fa-users mr-1"></i>${ch.viewers}</span>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                `;
-                container.appendChild(section);
+            container.innerHTML = '<div class="grid grid-cols-2 gap-3 px-2 pb-24"></div>';
+            const grid = container.querySelector('div');
+            store.channels.forEach(ch => {
+                const card = document.createElement('div');
+                card.className = "btn-ch";
+                card.onclick = () => openPlayer(ch.url, ch.name, ch.image, ch.viewers, 'General', ch.code);
+                card.innerHTML = `<img src="${ch.image}"><div class="absolute top-1 right-2 flex items-center space-x-1"><span class="text-[6px] text-gray-500">${ch.viewers}</span><div class="w-1 h-1 rounded-full ${ch.status === 'online' ? 'bg-[#00ffaa]' : 'bg-red-500'}"></div></div>`;
+                grid.appendChild(card);
             });
         }
 
-        // Filtro Específico por Categoría
-        function filterSport(cat) {
-            const container = document.getElementById('dynamic-content');
-            container.innerHTML = `<h2 class="text-3xl font-black italic uppercase tracking-tighter text-blue-500 mb-6">${cat} - Metadatos de Temporada</h2>`;
-            const events = store.sports[cat] || [];
-            
-            if(events.length === 0) {
-                container.innerHTML += `<p class="text-gray-500">No hay eventos activos para ${cat} en este momento.</p>`;
-                return;
-            }
-
-            const grid = document.createElement('div');
-            grid.className = "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6";
-            grid.innerHTML = events.map(ev => renderEventCard(ev, cat)).join('');
-            container.appendChild(grid);
-        }
-
-        // Motor de Búsqueda de Metadatos
-        function searchEngine() {
-            const query = document.getElementById('globalSearch').value.toLowerCase();
-            if(!query) return renderAllSports();
-
-            const filteredChannels = store.channels.filter(c => 
-                c.name.toLowerCase().includes(query) || c.code.toLowerCase().includes(query)
-            );
-
-            const container = document.getElementById('dynamic-content');
-            container.innerHTML = `<h2 class="text-xl font-bold mb-6">Resultados para: "${query}"</h2>`;
-            
-            if(filteredChannels.length > 0) {
-                const grid = document.createElement('div');
-                grid.className = "grid grid-cols-2 md:grid-cols-6 gap-4";
-                grid.innerHTML = filteredChannels.map(ch => `
-                    <div onclick="openPlayer('${ch.url}', '${ch.name}', '${ch.image}', '${ch.viewers}', 'Búsqueda')" class="bg-gray-900 p-4 rounded-xl border border-gray-800 text-center cursor-pointer">
-                        <img src="${ch.image}" class="h-10 mx-auto mb-2 object-contain">
-                        <p class="text-[10px] font-bold truncate">${ch.name}</p>
-                    </div>
-                `).join('');
-                container.appendChild(grid);
-            } else {
-                container.innerHTML += `<p class="text-gray-500">No se encontraron canales o equipos con esos metadatos.</p>`;
-            }
-        }
-
-        // Control del Reproductor
-        function openPlayer(url, title, logo, viewers, cat, country = 'GLOBAL') {
+        function openPlayer(url, title, logo, viewers, cat, country) {
             document.getElementById('modal-title').innerText = title;
             document.getElementById('modal-logo').src = logo;
-            document.getElementById('modal-meta').innerText = `${cat} | Origen: ${country.toUpperCase()} | Canal Verificado`;
-            document.getElementById('modal-viewers').innerHTML = `<i class="fas fa-users text-blue-500 mr-2"></i> ${viewers} viendo ahora`;
-            
-            document.getElementById('player-target').innerHTML = `
-                <iframe src="${url}" 
-                        width="100%" 
-                        height="100%" 
-                        frameborder="0" 
-                        allow="encrypted-media" 
-                        allowfullscreen></iframe>
-            `;
+            document.getElementById('modal-meta').innerText = `${cat} | ${country} | HD`;
+            document.getElementById('modal-viewers').innerHTML = `<i class="fas fa-users text-blue-500 mr-2"></i> ${viewers}`;
+            document.getElementById('player-target').innerHTML = `<iframe src="${url}" width="100%" height="100%" frameborder="0" allow="encrypted-media" allowfullscreen></iframe>`;
             document.getElementById('playerModal').classList.remove('hidden');
         }
 
-        function closePlayer() {
-            document.getElementById('playerModal').classList.add('hidden');
-            document.getElementById('player-target').innerHTML = '';
-        }
-
-        // Init App
+        function closePlayer() { document.getElementById('playerModal').classList.add('hidden'); document.getElementById('player-target').innerHTML = ''; }
+        
         init();
     </script>
+    
+    <nav class="fixed bottom-0 left-0 right-0 bg-black/95 backdrop-blur-lg border-t border-gray-900 px-4 py-4 flex justify-around items-center z-50">
+        <button onclick="switchTab('events')" id="tab-ev" class="flex flex-col items-center space-y-1 text-blue-500">
+            <i class="fas fa-calendar-alt text-xl"></i>
+            <span class="text-[9px] font-bold uppercase">Eventos</span>
+        </button>
+        
+        <button onclick="switchTab('channels')" id="tab-ch" class="flex flex-col items-center space-y-1 text-gray-500">
+            <i class="fas fa-tv text-xl"></i>
+            <span class="text-[9px] font-bold uppercase">Canales</span>
+        </button>
+    </nav>
 </body>
 </html>
