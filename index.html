@@ -250,7 +250,16 @@
                 };
                 localStorage.setItem(STORAGE_CONFIG.CACHE_KEY, JSON.stringify(cacheObj));
             },            loadFromCache() {
-                return [];
+                const cache = localStorage.getItem(STORAGE_CONFIG.CACHE_KEY);
+                if (!cache) return [];
+                try {
+                    const parsed = JSON.parse(cache);
+                    // Retorna los datos si no han expirado (30 días según STORAGE_CONFIG)
+                    return (Date.now() - parsed.timestamp < STORAGE_CONFIG.EXPIRATION_MS) ? (parsed.data || []) : [];
+                } catch (e) {
+                    console.error("Error al cargar caché de canales:", e);
+                    return [];
+                }
             },
             parseEra(text) {
                 const results = [];
@@ -917,8 +926,12 @@
                     globalData = []; // Limpiamos caché de eventos para evitar acumulación
                     globalData = freshData;
                     localStorage.setItem('event_data_cache', JSON.stringify(freshData));
+                }                const freshAceData = await AceStreamEngine.init(html);
+                if (freshAceData && freshAceData.length > 0) {
+                    aceStreamMap = freshAceData;
+                    AceStreamEngine.saveToCache(freshAceData);
                 }
-                aceStreamMap = await AceStreamEngine.init(html);
+
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 const swCode = `
